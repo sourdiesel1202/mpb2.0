@@ -3,6 +3,7 @@ import os
 import traceback
 from itertools import chain
 
+import pandas as pd
 from iteration_utilities import chained
 from functools import partial
 
@@ -117,7 +118,7 @@ def get_indicator_inventory():
             InventoryFunctionTypes.DETERMINE_ALERT_TYPE: determine_sma_alert_type,
             InventoryFunctionTypes.DID_ALERT: did_sma_alert,
             InventoryFunctionTypes.IGNORE: ignore_sma_alert,
-            InventoryFunctionTypes.USE_N1_BARS: True
+            InventoryFunctionTypes.USE_N1_BARS: False
         },
 
         Indicator.RSI:{
@@ -133,35 +134,35 @@ def get_indicator_inventory():
             InventoryFunctionTypes.DETERMINE_ALERT_TYPE: determine_dmi_alert_type,
             InventoryFunctionTypes.DID_ALERT: did_dmi_alert,
             InventoryFunctionTypes.IGNORE: ignore_dmi_alert,
-            InventoryFunctionTypes.USE_N1_BARS: True
+            InventoryFunctionTypes.USE_N1_BARS: False
         },
         Indicator.ADX: {
             InventoryFunctionTypes.DETERMINE_ALERT_TYPE: determine_adx_alert_type,
             InventoryFunctionTypes.LOAD: load_dmi_adx,
             InventoryFunctionTypes.DID_ALERT: did_adx_alert,
             InventoryFunctionTypes.IGNORE: ignore_adx_alert,
-            InventoryFunctionTypes.USE_N1_BARS: True
+            InventoryFunctionTypes.USE_N1_BARS: False
         },
         Indicator.MACD: {
             InventoryFunctionTypes.LOAD: load_macd,
             InventoryFunctionTypes.DETERMINE_ALERT_TYPE: determine_macd_alert_type,
             InventoryFunctionTypes.DID_ALERT: did_macd_alert,
             InventoryFunctionTypes.IGNORE: ignore_macd_alert,
-            InventoryFunctionTypes.USE_N1_BARS: True
+            InventoryFunctionTypes.USE_N1_BARS: False
         },
         Indicator.GOLDEN_CROSS: {
             InventoryFunctionTypes.LOAD: load_golden_cross,
             InventoryFunctionTypes.DETERMINE_ALERT_TYPE: determine_golden_cross_alert_type,
             InventoryFunctionTypes.DID_ALERT: did_golden_cross_alert,
             InventoryFunctionTypes.IGNORE: ignore_golden_cross_alert,
-            InventoryFunctionTypes.USE_N1_BARS: True
+            InventoryFunctionTypes.USE_N1_BARS: False
         },
         Indicator.DEATH_CROSS: {
             InventoryFunctionTypes.LOAD: load_death_cross,
             InventoryFunctionTypes.DETERMINE_ALERT_TYPE: determine_death_cross_alert_type,
             InventoryFunctionTypes.DID_ALERT: did_death_cross_alert,
             InventoryFunctionTypes.IGNORE: ignore_death_cross_alert,
-            InventoryFunctionTypes.USE_N1_BARS: True
+            InventoryFunctionTypes.USE_N1_BARS: False
         },
         Indicator.PROFITABLE_LINE: {
             InventoryFunctionTypes.LOAD: load_profitable_lines,
@@ -177,11 +178,21 @@ def get_indicator_inventory():
             InventoryFunctionTypes.DETERMINE_ALERT_TYPE: determine_adx_reversal_alert_type,
             InventoryFunctionTypes.IGNORE: ignore_adx_reversal_alert,
             InventoryFunctionTypes.USE_N1_BARS: False
+        },
+        Indicator.BREAKOUT: {
+            InventoryFunctionTypes.LOAD: load_breakout,
+            InventoryFunctionTypes.DID_ALERT: did_breakout_alert,
+            InventoryFunctionTypes.DETERMINE_ALERT_TYPE: determine_breakout_alert_type,
+            InventoryFunctionTypes.IGNORE: ignore_breakout_reversal_alert,
+            InventoryFunctionTypes.USE_N1_BARS: False
         }
 
     }
 
 
+# def ignore_breakout_reversal_alert(connection, alert_direction, ticker, ticker_history, module_config):
+def ignore_breakout_reversal_alert(connection, alert_direction, ticker, ticker_history, module_config):
+    pass
 def ignore_adx_reversal_alert(connection, alert_direction, ticker, ticker_history, module_config):
     pass
 
@@ -250,9 +261,9 @@ def load_sma(ticker,ticker_history, module_config, window=0,connection=None):
 
 
 def load_golden_cross(ticker,ticker_history, module_config,connection=None):
-    return {"sma_long":load_sma(ticker,ticker_history,module_config, window=module_config['gc_long_sma_window']), f"sma_short":load_sma(ticker,ticker_history,module_config, window=module_config['gc_short_sma_window'])}
+    return {"sma_long":load_sma(ticker,ticker_history,module_config, window=module_config['indicator_configs'][Indicator.GOLDEN_CROSS]['gc_long_sma_window']), f"sma_short":load_sma(ticker,ticker_history,module_config, window=module_config['indicator_configs'][Indicator.GOLDEN_CROSS]['gc_short_sma_window'])}
 def load_death_cross(ticker,ticker_history, module_config,connection=None):
-    return {"sma_long":load_sma(ticker,ticker_history,module_config, window=module_config['dc_long_sma_window']), f"sma_short":load_sma(ticker,ticker_history,module_config, window=module_config['dc_short_sma_window'])}
+    return {"sma_long":load_sma(ticker,ticker_history,module_config, window=module_config['indicator_configs'][Indicator.DEATH_CROSS]['dc_long_sma_window']), f"sma_short":load_sma(ticker,ticker_history,module_config, window=module_config['indicator_configs'][Indicator.DEATH_CROSS]['dc_short_sma_window'])}
 
 # def load_sma(ticker, client,module_config, ticker_history, **kwargs):
 #     sma = client.get_sma(ticker, **kwargs)
@@ -272,7 +283,36 @@ def load_rsi(ticker, ticker_history, module_config,connection=None):
 
 def load_breakout(ticker, ticker_history, module_config,connection=None):
     df = wrap(load_ticker_history_pd_frame(ticker, ticker_history))
-    return df['rsi']
+
+    # high = df.loc[:, df.columns.isin(['high'])]
+    high = df['high']#.loc[:, df.columns.isin(['high'])]
+    # dlow = df.loc[:, df.columns.isin(['low'])]
+    low = df['low']#.loc[:, df.columns.isin(['low'])]
+    # close = df.loc[:, df.columns.isin(['close'])]
+    close = df['close']#.loc[:, df.columns.isin(['close'])]
+    #
+    upper = df['high'] * (1 + 4 * (df['high'] - df['low']) / (df['high'] + df['low']))
+    lower = df['low'] * (1 - 4 * (df['high'] - df['low']) / (df['high'] + df['low']))
+    upper_band = upper.rolling(20).mean()
+    lower_band = lower.rolling(20).mean()
+    sma20 = close.rolling(20).mean()
+    #
+    xo = (
+        (close > upper_band)
+        & (close.shift(1) > upper_band.shift(1))
+        & (close > sma20)
+    )
+    xu = (
+        (close < lower_band)
+        & (close.shift(1) < lower_band.shift(1))
+        & (close < sma20)
+    )
+    # find out if previous day was successful
+    calls_hit = xo.shift(1) & (high > close.shift(1))
+    puts_hit = xu.shift(1) & (low < close.shift(1))
+    df = pd.concat([xo,xu,calls_hit,puts_hit], axis=1, keys=['xo','xu','calls_hit','puts_hit'])#.swaplevel(axis=1)
+    return df
+    # return df['rsi']
 
 
 def load_obv(ticker, client,module_config,connection=None, **kwargs):
@@ -449,6 +489,8 @@ def did_adx_alert(dmi_data,ticker,ticker_data,module_config,connection=None):
 
     else:
         return False
+def did_breakout_alert(breakout_data,ticker,ticker_data,module_config,connection=None):
+    return breakout_data['xo'][ticker_data[-1].timestamp] or breakout_data['xu'][ticker_data[-1].timestamp]
 def did_adx_reversal_alert(dmi_data,ticker,ticker_data,module_config,connection=None):
     '''
     Pass in the data from the client and do calculations
@@ -519,6 +561,11 @@ def determine_macd_alert_type(indicator_data,ticker,ticker_history, module_confi
 #         return AlertType.MACD_SIGNAL_CROSS_MACD
 #     else:
 #         raise Exception(f"Could not determine MACD direction for: {ticker}")
+def determine_breakout_alert_type(indicator_data,ticker,ticker_history, module_config,connection=None):
+    if indicator_data['xo'][ticker_history[-1].timestamp]:
+        return AlertType.BREAKOUT_CROSSOVER_BULLISH
+    if indicator_data['xu'][ticker_history[-1].timestamp]:
+        return AlertType.BREAKOUT_CROSSOVER_BEARISH
 def determine_rsi_alert_type(indicator_data,ticker,ticker_history, module_config,connection=None):
     if indicator_data[ticker_history[-1].timestamp] >= module_config['indicator_configs'][Indicator.RSI]['rsi_overbought_threshold']:
         if module_config['logging']:
@@ -692,9 +739,9 @@ def determine_sr_direction(indicator_data,ticker,ticker_history, module_config,c
         # sr_band = indicator_data[min_index] if len(indicator_data[min_index]) > 1 else [sr_band[0] - plus_minus, sr_band[0] + plus_minus]
         distance_to_points.sort(key=lambda x: x, reverse=not trending_positive)
         if trending_positive:
-            return AlertType.BREAKOUT_SR_UP+f"==>${round(distance_to_points[0]+ticker_history[-1].close,2)} (${round(distance_to_points[0],2)}/{round(float(distance_to_points[0] / ticker_history[-1].close)*100,2)}%)"
+            return AlertType.SUPPORT_RESISTANCE_BREAKOUT_UP+f"==>${round(distance_to_points[0]+ticker_history[-1].close,2)} (${round(distance_to_points[0],2)}/{round(float(distance_to_points[0] / ticker_history[-1].close)*100,2)}%)"
         else:
-            return AlertType.BREAKOUT_SR_DOWN+f"==>${round(distance_to_points[0]+ticker_history[-1].close,2)} (${round(distance_to_points[0],2)}/{round(float(distance_to_points[0] / ticker_history[-1].close)*100,2)}%)"
+            return AlertType.SUPPORT_RESISTANCE_BREAKOUT_DOWN+f"==>${round(distance_to_points[0]+ticker_history[-1].close,2)} (${round(distance_to_points[0],2)}/{round(float(distance_to_points[0] / ticker_history[-1].close)*100,2)}%)"
 def determine_golden_cross_alert_type(indicator_data,ticker,ticker_history, module_config,connection=None):
     if did_golden_cross_alert(indicator_data,ticker,ticker_history,module_config):
         return AlertType.GOLDEN_CROSS_APPEARED

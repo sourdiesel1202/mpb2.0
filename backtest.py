@@ -3,7 +3,7 @@ from functions import calculate_x_is_what_percentage_of_y
 from history import load_ticker_history_pd_frame
 from strategy import IronCondor, Strategy, LongCall, LongPut
 from stockstats import wrap
-from indicators import load_rsi, get_indicator_inventory, load_macd, load_sma, load_dmi_adx
+from indicators import load_rsi, get_indicator_inventory, load_macd, load_sma, load_dmi_adx, load_breakout
 
 
 def perform_backtest(ticker, ticker_history, strategy_type, module_config):
@@ -127,6 +127,8 @@ def load_indicator_data(ticker, ticker_history, module_config):
             indicator_dict[indicator]=load_macd(ticker, ticker_history, module_config)
         if indicator == Indicator.SMA:
             indicator_dict[indicator]=load_sma(ticker, ticker_history, module_config)
+        if indicator == Indicator.BREAKOUT:
+            indicator_dict[indicator]=load_breakout(ticker, ticker_history, module_config)
         if indicator in  [Indicator.ADX, Indicator.DMI, Indicator.ADX_REVERSAL]:
             indicator_dict[indicator]=load_dmi_adx(ticker, ticker_history, module_config)
 

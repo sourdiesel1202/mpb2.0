@@ -10,6 +10,7 @@ from functions import  get_today
 from mplfinance.original_flavor import candlestick_ohlc
 import matplotlib.dates as mpl_dates
 import matplotlib.pyplot as plt
+from enums import Indicator
 from history import load_ticker_history_pd_frame
 from functions import timestamp_to_datetime, human_readable_datetime
 # get stock prices using yfinance library
@@ -25,7 +26,7 @@ def find_support_resistance_levels(ticker, ticker_history, module_config, flatte
     # ticker = 'COST'
     # df = get_stock_price(ticker)
     # print(df)
-    df = load_ticker_history_pd_frame(ticker, ticker_history[-module_config['sr_lookback']:],convert_to_datetime=True, human_readable=True)
+    df = load_ticker_history_pd_frame(ticker, ticker_history[-module_config['indicator_configs'][Indicator.SUPPORT_RESISTANCE]['sr_lookback']:],convert_to_datetime=True, human_readable=True)
     # print(df)
     df['date'] = pd.to_datetime(df.index)
     df['date'] = df['date'].apply(mpl_dates.date2num)

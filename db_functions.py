@@ -79,7 +79,7 @@ def process_ticker_similar_lines(ticker, ticker_history, module_config):
     #     ticker_results[ticker]['directions'].append(
     #         determine_sr_direction(sr_data, ticker, ticker_history, module_config))
     #     # ignore if under sr_breakout_percentage
-    #     if AlertType.BREAKOUT_SR_UP in ticker_results[ticker]['directions'][-1] or AlertType.BREAKOUT_SR_DOWN in \
+    #     if AlertType.SUPPORT_RESISTANCE_BREAKOUT_UP in ticker_results[ticker]['directions'][-1] or AlertType.SUPPORT_RESISTANCE_BREAKOUT_DOWN in \
     #             ticker_results[ticker]['directions'][-1]:
     #         breakout_percentage = float(
     #             ticker_results[ticker]['directions'][-1].split('/')[-1].split('%')[0].replace('-', ''))
