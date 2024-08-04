@@ -1,7 +1,7 @@
 {
   "logging": false,
 
-  "position_length": 20,
+
   "strategy": "LONG_CALL",
   "test_mode": false,
   "tickers": ["SPY", "QQQ", "DIA"],
@@ -9,7 +9,7 @@
   "plot_bars": 5000,
   "timespan_multiplier": 1,
   "use_indicators": true,
-  "indicators": [ "SUPPORT_RESISTANCE"],
+  "indicators": [ "VIX_RSI"],
   "indicator_initial_range":300
 
 }

@@ -7,7 +7,7 @@
   "timespan": "day",
   "timespan_multiplier": 1,
   "use_indicators": true,
-  "indicators": ["BREAKOUT"],
+  "indicators": [ "SUPPORT_RESISTANCE"],
   "indicator_initial_range":300
 
 }

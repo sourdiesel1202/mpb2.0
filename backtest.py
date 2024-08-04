@@ -4,14 +4,14 @@ from history import load_ticker_history_pd_frame
 from strategy import IronCondor, Strategy, LongCall, LongPut
 from stockstats import wrap
 from indicators import load_rsi, get_indicator_inventory, load_macd, load_sma, load_dmi_adx, load_breakout, \
-    load_death_cross, load_golden_cross, load_support_resistance
+    load_death_cross, load_golden_cross, load_support_resistance, load_vix_rsi
 
 
-def perform_backtest(ticker, ticker_history, strategy_type, module_config):
+def perform_backtest(ticker, ticker_history, strategy_type, module_config, connection=None):
     if not module_config['use_indicators']:
         return backtest_strategy(ticker, ticker_history, module_config)
     else:
-        return backtest_strategy_with_indicators(ticker, ticker_history, module_config)
+        return backtest_strategy_with_indicators(ticker, ticker_history, module_config, connection=connection)
 
 
 def backtest_strategy(ticker, ticker_history, module_config):
@@ -44,11 +44,11 @@ def backtest_strategy(ticker, ticker_history, module_config):
         print_backtest_results(results,  module_config)
     return results
 
-def backtest_strategy_with_indicators(ticker, ticker_history, module_config):
+def backtest_strategy_with_indicators(ticker, ticker_history, module_config, connection=None):
     results = {"winners":0, "losers":0,  "positions":[]}
     last_position_index =0
     # for i in range(0, len(ticker_history),module_config['strategy_configs']['iron_condor']['position_length']):
-    indicator_data = load_indicator_data(ticker, ticker_history, module_config)
+    indicator_data = load_indicator_data(ticker, ticker_history, module_config, connection)
 
     for i in range(module_config['indicator_initial_range'], len(ticker_history)-module_config['strategy_configs'][module_config['strategy']]['position_length']):
         if i < module_config['strategy_configs'][module_config['strategy']]['position_length']+module_config['indicator_initial_range']:
@@ -116,7 +116,7 @@ def did_ticker_trigger_alerts_at_index(ticker, ticker_history,indicator_data, in
 
     return True
 
-def load_indicator_data(ticker, ticker_history, module_config):
+def load_indicator_data(ticker, ticker_history, module_config, connection):
     '''
     Retuns a dict of pd frames with the indicator as the key
     :param ticker:
@@ -140,6 +140,8 @@ def load_indicator_data(ticker, ticker_history, module_config):
             indicator_dict[indicator]=load_golden_cross(ticker, ticker_history, module_config)
         if indicator == Indicator.SUPPORT_RESISTANCE:
             indicator_dict[indicator]=load_support_resistance(ticker, ticker_history, module_config)
+        if indicator == Indicator.VIX_RSI:
+            indicator_dict[indicator]=load_vix_rsi(ticker, ticker_history, module_config, connection=connection)
         if indicator in  [Indicator.ADX, Indicator.DMI, Indicator.ADX_REVERSAL]:
             indicator_dict[indicator]=load_dmi_adx(ticker, ticker_history, module_config)
 

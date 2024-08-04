@@ -5,7 +5,7 @@ import pandas as pd
 from enums import PositionType
 # import s3
 from history import load_ticker_history_pd_frame
-from indicators import load_macd, load_sma, load_dmi_adx, load_rsi, load_support_resistance, load_breakout
+from indicators import load_macd, load_sma, load_dmi_adx, load_rsi, load_support_resistance, load_breakout, load_vix_rsi
 from indicators import load_dmi_adx
 from indicators import  load_death_cross, load_golden_cross, determine_death_cross_alert_type,determine_golden_cross_alert_type, did_golden_cross_alert, did_death_cross_alert
 
@@ -148,7 +148,7 @@ def plot_indicator_data(ticker, ticker_history,indicator_data, module_config, na
     df = load_ticker_history_pd_frame(ticker, ticker_history, convert_to_datetime=True, human_readable=True)
     return go.Figure(data=go.Scatter(
         x=df['date'],
-        y=[indicator_data[x.timestamp] for x in ticker_history],
+        y=[indicator_data[x.timestamp] for x in ticker_history if x.timestamp in indicator_data],
         name=name, mode='lines', line={'color':color, 'width':1},
     ), layout_yaxis_range=[0, max]).data[0]
 
@@ -234,7 +234,7 @@ def build_strategy_dict(ticker, ticker_history,strategy_data, module_config):
             }
     }
     return strategy_dict
-def build_indicator_dict(ticker, ticker_history, module_config):
+def build_indicator_dict(ticker, ticker_history, module_config, connection):
     indicator_dict = {
         "breakout": {
             "plot": plot_indicator_data_dual_y_axis(ticker, ticker_history[-module_config['plot_bars']:],
@@ -268,6 +268,12 @@ def build_indicator_dict(ticker, ticker_history, module_config):
                                         module_config, name='rsi', color='Blue'),
             "overlay": False
         },
+        "vix_rsi": {
+            "plot": plot_indicator_data(ticker, ticker_history[-module_config['plot_bars']:],
+                                        load_vix_rsi(ticker, ticker_history, module_config, connection),
+                                        module_config, name='rsi', color='Blue'),
+            "overlay": False
+        },
         "macd": {
             "plot": plot_indicator_data_dual_y_axis(ticker, ticker_history[-module_config['plot_bars']:],
                                                     load_macd(ticker, ticker_history, module_config),
@@ -282,12 +288,12 @@ def build_indicator_dict(ticker, ticker_history, module_config):
             "overlay": False
         },
 
-        "s/r levels": {
-            "plot": plot_sr_lines(ticker, ticker_history[-module_config['plot_bars']:],
-                                  load_support_resistance(ticker, ticker_history, module_config, flatten=True),
-                                  module_config),
-            "overlay": True
-        }
+        # "s/r levels": {
+        #     "plot": plot_sr_lines(ticker, ticker_history[-module_config['plot_bars']:],
+        #                           load_support_resistance(ticker, ticker_history, module_config, flatten=True),
+        #                           module_config),
+        #     "overlay": True
+        # }
 
     }
 

@@ -22,7 +22,7 @@ if __name__ == '__main__':
             print(f"Running Backtest of {ticker}")
         # print(int(calculate_what_is_x_percentage_of_y(1,542)))
             ticker_history = load_ticker_history_db(ticker, module_config,connection)
-            print_backtest_results(ticker,perform_backtest(ticker, ticker_history, "IRON_CONDOR", module_config), module_config)
+            print_backtest_results(ticker,perform_backtest(ticker, ticker_history, "IRON_CONDOR", module_config,connection), module_config)
             # IronCondor.generate_strikes(ticker_history[-1].close,module_config )
         # tickers = module_config['tickers']
         # print(f"Loading Ticker Data for {len(tickers)} tickers")

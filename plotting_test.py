@@ -26,8 +26,8 @@ if __name__ == '__main__':
         print(f"Beginning plotting test of ${ticker_a}")
         connection = obtain_db_connection(module_config)
         ticker_history_a = load_ticker_history_db(ticker_a, module_config, connection=connection)
-        backtest_results = perform_backtest(ticker_a, ticker_history_a, module_config['strategy'], module_config)
+        backtest_results = perform_backtest(ticker_a, ticker_history_a, module_config['strategy'], module_config,connection=connection)
         print_backtest_results(ticker_a,backtest_results, module_config)
-        plot_ticker_with_indicators_and_positions(ticker_a,ticker_history_a,build_indicator_dict(ticker_a, ticker_history_a, module_config),build_strategy_dict(ticker_a, ticker_history_a,backtest_results['positions'], module_config), module_config)
+        plot_ticker_with_indicators_and_positions(ticker_a,ticker_history_a,build_indicator_dict(ticker_a, ticker_history_a, module_config,connection),build_strategy_dict(ticker_a, ticker_history_a,backtest_results['positions'], module_config), module_config)
 
     print(f"\nCompleted plotting test of ({','.join([f'${x}' for x in module_config['tickers']])}) in {int((int(time.time()) - start_time) / 60)} minutes and {int((int(time.time()) - start_time) % 60)} seconds")
