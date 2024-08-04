@@ -9,10 +9,12 @@ class Leg:
         if type not in [PositionType.LONG, PositionType.SHORT]:
             raise Exception("Leg must be short or long")
         self.type=type
-
+    def __str__(self):
+        return f"{self.strike} {self.type}"
 class Strategy:
-    def __init__(self):
-        pass
+    def __init__(self, open_date, length):
+        self.open_date=open_date
+        self.length=length
     def is_profitable(self, ticker_price,module_config):
         '''
         this method determines whether a strategy would be profitable i.e. would it make money or lose money
@@ -21,32 +23,51 @@ class Strategy:
         :return: true if you make money, false if you lose money
         '''
         pass
+
+    def legs(self):
+        pass
+    def __str__(self):
+        pass
 class LongCall(Strategy):
-    def __init__(self, strike_price):
-        super().__init__()
+    def __init__(self, strike_price, open_date, length):
+        super().__init__(open_date, length)
         self.strike = Leg(strike_price.close,PositionType.LONG )
 
-    def is_profitable(self, ticker_price, module_config):
-        return self.strike.strike < ticker_price
 
+    def is_profitable(self, ticker_history, module_config):
+        if module_config['logging']:
+            print(f"Checking Profitabilty of {str(self)}, opened on {self.open_date} closed on {ticker_history.dt} held for {module_config['strategy_configs'][module_config['strategy']]['position_length']}")
+        return self.strike.strike < ticker_history.close
 
-
+    def legs(self):
+        return [self.strike]
+    def __str__(self):
+        return f"{self.open_date} Long Call"
 class LongPut(Strategy):
-    def __init__(self, strike_price):
-        super().__init__()
-        self.strike = Leg(strike_price.close,PositionType.LONG )
+    def __init__(self, strike_price, open_date, length):
+        super().__init__(open_date, length)
+        self.strike = Leg(strike_price.close,PositionType.SHORT )
 
-    def is_profitable(self, ticker_price, module_config):
-        return self.strike.strike > ticker_price
-
+    def is_profitable(self, ticker_history, module_config):
+        if module_config['logging']:
+            print(f"Checking Profitabilty of {str(self)}, opened on {self.open_date} closed on {ticker_history.dt} held for {module_config['strategy_configs'][module_config['strategy']]['position_length']}")
+        return self.strike.strike > ticker_history.close
+    def legs(self):
+        return [self.strike]
+    def __str__(self):
+        return f"{self.open_date} Long Put"
 class IronCondor(Strategy):
-    def __init__(self, long_put, short_put, long_call, short_call):
-        super().__init__()
+    def __init__(self, long_put, short_put, long_call, short_call, open_date, length):
+        super().__init__(open_date,length)
         self.long_put=long_put
         self.short_put=short_put
         self.long_call=long_call
         self.short_call=short_call
 
+    def legs(self):
+        return [self.long_put, self.short_put, self.short_call, self.long_call]
+    def __str__(self):
+        return f"{self.open_date} Iron Condor"
     def is_itm(self, ticker_price, module_config):
         '''
         is between the two short strikes
@@ -63,9 +84,10 @@ class IronCondor(Strategy):
         '''
         return ticker_price < self.long_put.strike_price or ticker_price > self.long_call.strike_price
 
-    def is_profitable(self, ticker_price, module_config):
-
-        return self.is_itm(ticker_price, module_config)
+    def is_profitable(self, ticker_history, module_config):
+        if module_config['logging']:
+            print(f"Checking Profitabilty of {str(self)}, opened on {self.open_date} closed on {ticker_history.dt} held for {module_config['strategy_configs'][module_config['strategy']]['position_length']}")
+        return self.is_itm(ticker_history.close, module_config)
     def is_atm(self, ticker_price, module_config):
         # ticker_price=ticker_history.close
         return (self.long_put.strike_price <= ticker_price <= self.short_put.strike_price) or (self.short_call.strike_price <= ticker_price <= self.long_call.strike_price)

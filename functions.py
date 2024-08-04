@@ -11,8 +11,21 @@ import pymysql
 def load_module_config(module):
     print(f"Loading config file for {module}")
     with open(f"configs/{module}.json", "r") as f:
-        return json.loads(f.read())
+        module_config =  json.loads(f.read())
+    with open(f"configs/database.json", "r") as f:
+        module_config['database'] = {}
+        for k, v in json.loads(f.read()).items():
+            module_config['database'][k]=v
+    with open(f"configs/strategy.json", "r") as f:
+        module_config['strategy_configs'] = {}
+        for k, v in json.loads(f.read()).items():
+            module_config['strategy_configs'][k]=v
 
+    with open(f"configs/indicators.json", "r") as f:
+        module_config['indicator_configs'] = {}
+        for k, v in json.loads(f.read()).items():
+            module_config['indicator_configs'][k]=v
+    return  module_config
 def write_csv(filename, rows):
     with open(filename  , 'w', newline='') as f:
         writer = csv.writer(f)

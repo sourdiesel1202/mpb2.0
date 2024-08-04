@@ -2,9 +2,10 @@ from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import pandas as pd
 
+from enums import PositionType
 # import s3
 from history import load_ticker_history_pd_frame
-from indicators import load_macd, load_sma, load_dmi_adx, load_rsi,load_support_resistance
+from indicators import load_macd, load_sma, load_dmi_adx, load_rsi, load_support_resistance, load_breakout
 from indicators import load_dmi_adx
 from indicators import  load_death_cross, load_golden_cross, determine_death_cross_alert_type,determine_golden_cross_alert_type, did_golden_cross_alert, did_death_cross_alert
 
@@ -49,6 +50,7 @@ def plot_ticker_with_indicators(ticker, ticker_history, indicator_data, module_c
                 for i in range(0, len(x['plot'])):
                     indicator_figure.add_trace(x['plot'][i], row=r, col=1)
             r = r + 1
+
     candle_fig.update_layout(xaxis_rangeslider_visible=False, xaxis=dict(type="date"))
     min_percent=(50/100)*min([x.low for x in ticker_history])
     max_percent=(50/100)*max([x.low for x in ticker_history])
@@ -62,6 +64,74 @@ def plot_ticker_with_indicators(ticker, ticker_history, indicator_data, module_c
     # candle_fig.show()
     # indicator_figure.show()
     figures_to_html(ticker, [candle_fig, indicator_figure], f"html/{module_config['timespan_multiplier']}{module_config['timespan']}{ticker}.html")
+
+    # s3.upload_file(f"html/{module_config['timespan_multiplier']}{module_config['timespan']}{ticker}.html","www.mpb-traders-data.com")
+    pass
+def plot_ticker_with_indicators_and_positions(ticker, ticker_history, indicator_data,strategy_data, module_config):
+
+    df = load_ticker_history_pd_frame(ticker, ticker_history[-module_config['plot_bars']:], convert_to_datetime=True, human_readable=True)
+    subplot_titles = [x  for x in indicator_data.keys() if not indicator_data[x]['overlay']]
+    # candle_fig  = make_subplots(rows=len([not x['overlay'] for x in indicator_data.values()]), cols=2, subplot_titles=subplot_titles)
+    candle_fig = go.Figure(data=[go.Candlestick(x=df['date'],
+                                         open=df['open'], high=df['high'],
+                                         low=df['low'], close=df['close'],name=ticker)] )
+    r = 1
+    # c =2
+    indicator_figure = make_subplots(rows=len([not x['overlay'] for x in indicator_data.values()]), cols=1, subplot_titles=subplot_titles)
+    for key,x in indicator_data.items():
+        if x['overlay']:
+            if type(x['plot']) not in [list, tuple]:
+                candle_fig.add_trace(x['plot'])
+            else:
+                for i in range(0, len(x['plot'])):
+                    if type(x['plot'][i]) == go.Scatter:
+
+                        candle_fig.add_trace(x['plot'][i])
+                    else:
+                        candle_fig.add_shape(x['plot'][i])
+        else:
+            if type(x['plot']) not in [list,tuple]:
+                indicator_figure.add_trace(x['plot'], row=r, col=1)
+            else:
+                for i in range(0, len(x['plot'])):
+                    indicator_figure.add_trace(x['plot'][i], row=r, col=1)
+            r = r + 1
+    #now we do the strategy figure
+    r = 1
+    # c =2
+    strategy_figure = make_subplots(rows=len([not x['overlay'] for x in strategy_data.values()]), cols=1,
+                                     subplot_titles=subplot_titles)
+    for key, x in strategy_data.items():
+        if x['overlay']:
+            if type(x['plot']) not in [list, tuple]:
+                candle_fig.add_trace(x['plot'])
+            else:
+                for i in range(0, len(x['plot'])):
+                    if type(x['plot'][i]) == go.Scatter:
+
+                        candle_fig.add_trace(x['plot'][i])
+                    else:
+                        candle_fig.add_shape(x['plot'][i])
+        else:
+            if type(x['plot']) not in [list, tuple]:
+                strategy_figure.add_trace(x['plot'], row=r, col=1)
+            else:
+                for i in range(0, len(x['plot'])):
+                    strategy_figure.add_trace(x['plot'][i], row=r, col=1)
+            r = r + 1
+    candle_fig.update_layout(xaxis_rangeslider_visible=False, xaxis=dict(type="date"))
+    min_percent=(50/100)*min([x.low for x in ticker_history])
+    max_percent=(50/100)*max([x.low for x in ticker_history])
+    # fig.update_yaxes( type='log')
+
+    candle_fig.update_xaxes(rangebreaks=[
+            dict(bounds=["sat", "mon"]),
+            dict(bounds=[16, 9.5], pattern="hour"),
+
+        ])
+    # candle_fig.show()
+    # indicator_figure.show()
+    figures_to_html(ticker, [candle_fig, indicator_figure, strategy_figure], f"html/{module_config['timespan_multiplier']}{module_config['timespan']}{ticker}.html")
 
     # s3.upload_file(f"html/{module_config['timespan_multiplier']}{module_config['timespan']}{ticker}.html","www.mpb-traders-data.com")
     pass
@@ -96,7 +166,31 @@ def plot_indicator_data_dual_y_axis(ticker, ticker_history,indicator_data, modul
 
     return fig.data
 
+
+def plot_strategy_lines(ticker, ticker_history,strategy_data, module_config):
+    lines = []
+    for position in strategy_data:
+        text = ['' for x in strategy_data]
+
+        # text.insert(-1, sr_level)
+        for leg in position.legs():
+            starting_timestamp_index = [x.dt for x in ticker_history].index(position.open_date)
+            x = [ticker_history[i].dt for i in range(starting_timestamp_index, starting_timestamp_index+position.length)]
+            y = [leg.strike for i in range(starting_timestamp_index, starting_timestamp_index+position.length)]
+            lines.append(go.Scatter(
+                x=x,
+                y=y,
+                mode="lines+text",
+                line={'width': 2, 'color': 'red' if leg.type == PositionType.SHORT else 'green', 'dash': 'solid'},
+                name=f"{str(position)} {str(leg)}",
+                text=text,
+                textposition="bottom left"
+            )
+
+        )
+    return lines
 def plot_sr_lines(ticker, ticker_history,indicator_data, module_config):
+
     lines = []
     for sr_level in indicator_data:
         text = ['' for x in ticker_history[:1]]
@@ -130,8 +224,25 @@ def figures_to_html(ticker,figs, filename):
             dashboard.write(inner_html)
         dashboard.write("</body></html>" + "\n")
 
+def build_strategy_dict(ticker, ticker_history,strategy_data, module_config):
+    strategy_dict = {
+        module_config['strategy']:
+            {
+                "plot" : plot_strategy_lines(ticker, ticker_history,strategy_data,module_config),
+                "overlay":True
+
+            }
+    }
+    return strategy_dict
 def build_indicator_dict(ticker, ticker_history, module_config):
     indicator_dict = {
+        "breakout": {
+            "plot": plot_indicator_data_dual_y_axis(ticker, ticker_history[-module_config['plot_bars']:],
+                                                    load_breakout(ticker, ticker_history, module_config),
+                                                    module_config, keys=['xo', 'xu'],
+                                                    colors=['green', 'red']),
+            "overlay": False
+        },
         "sma": {
             "plot": plot_indicator_data(ticker, ticker_history[-module_config['plot_bars']:],
                                         load_sma(ticker, ticker_history, module_config), module_config,
@@ -170,6 +281,7 @@ def build_indicator_dict(ticker, ticker_history, module_config):
                                                     colors=['green', 'red', 'blue']),
             "overlay": False
         },
+
         "s/r levels": {
             "plot": plot_sr_lines(ticker, ticker_history[-module_config['plot_bars']:],
                                   load_support_resistance(ticker, ticker_history, module_config, flatten=True),

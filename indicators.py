@@ -171,6 +171,13 @@ def get_indicator_inventory():
             InventoryFunctionTypes.IGNORE: ignore_profitable_lines_alert,
             InventoryFunctionTypes.USE_N1_BARS: False
         },
+        Indicator.SUPPORT_RESISTANCE: {
+            InventoryFunctionTypes.LOAD: load_support_resistance,
+            InventoryFunctionTypes.DID_ALERT: did_support_resistance_alert,
+            InventoryFunctionTypes.DETERMINE_ALERT_TYPE: determine_sr_direction,
+            InventoryFunctionTypes.IGNORE: ignore_support_resistance_alert,
+            InventoryFunctionTypes.USE_N1_BARS: False
+        },
 
         Indicator.ADX_REVERSAL: {
             InventoryFunctionTypes.LOAD: load_dmi_adx,
@@ -196,6 +203,8 @@ def ignore_breakout_reversal_alert(connection, alert_direction, ticker, ticker_h
 def ignore_adx_reversal_alert(connection, alert_direction, ticker, ticker_history, module_config):
     pass
 
+def ignore_support_resistance_alert(connection, alert_direction, ticker, ticker_history, module_config):
+    pass
 def ignore_profitable_lines_alert(connection, alert_direction, ticker, ticker_history, module_config):
     pass
 def ignore_golden_cross_alert(connection, alert_direction, ticker, ticker_history, module_config):
@@ -490,6 +499,8 @@ def did_adx_alert(dmi_data,ticker,ticker_data,module_config,connection=None):
     else:
         return False
 def did_breakout_alert(breakout_data,ticker,ticker_data,module_config,connection=None):
+    if module_config['logging']:
+        print(f"Testing Breakout Alert for {ticker_data[-1].dt}")
     return breakout_data['xo'][ticker_data[-1].timestamp] or breakout_data['xu'][ticker_data[-1].timestamp]
 def did_adx_reversal_alert(dmi_data,ticker,ticker_data,module_config,connection=None):
     '''
@@ -523,6 +534,9 @@ def did_dmi_alert(dmi_data,ticker,ticker_data,module_config,connection=None):
 
 
 
+def did_support_resistance_alert(indicator_data,ticker,ticker_history, module_config,connection=None):
+    if determine_sr_direction(indicator_data,ticker,ticker_history, module_config,connection=None) != AlertType.SUPPORT_RESISTANCE_CONSOLIDATON:
+        return True
 def did_rsi_alert(indicator_data,ticker,ticker_history, module_config,connection=None):
     if module_config['logging']:
         print(f"${ticker}: Checking RSI Alert, Comparing Value at {datetime.datetime.fromtimestamp(ticker_history[-1].timestamp / 1e3, tz=ZoneInfo('US/Eastern'))}:{ticker}: to value at {datetime.datetime.fromtimestamp(ticker_history[-2].timestamp / 1e3, tz=ZoneInfo('US/Eastern'))}:{ticker}:")
@@ -562,6 +576,8 @@ def determine_macd_alert_type(indicator_data,ticker,ticker_history, module_confi
 #     else:
 #         raise Exception(f"Could not determine MACD direction for: {ticker}")
 def determine_breakout_alert_type(indicator_data,ticker,ticker_history, module_config,connection=None):
+    if module_config['logging']:
+        print(f"Determining BREAKOUT alert type on {ticker_history[-1].dt}")
     if indicator_data['xo'][ticker_history[-1].timestamp]:
         return AlertType.BREAKOUT_CROSSOVER_BULLISH
     if indicator_data['xu'][ticker_history[-1].timestamp]:
@@ -579,7 +595,7 @@ def determine_rsi_alert_type(indicator_data,ticker,ticker_history, module_config
         return AlertType.RSI_OVERSOLD
     else:
         return AlertType.RSI_NORMAL
-        raise Exception(f"Could not determine RSI Direction for {ticker}")
+        # raise Exception(f"Could not determine RSI Direction for {ticker}")
 # def determine_rsi_direction(data, ticker, module_config):
 #     if data[0].value > module_config['indicator_configs'][Indicator.RSI]['rsi_overbought_threshold']:
 #         if module_config['logging']:
@@ -696,13 +712,15 @@ def determine_sr_direction(indicator_data,ticker,ticker_history, module_config,c
                 #if we're in a band, find out whether it's heading toward the top or the bottom of the band
                 #look back over last 3 bars, and see what the trend is, if it's down we're presumably headed to the support level,
                 #if it's up presumably we're headed
-                return AlertType.SR_CONSOLIDATING+f" (LB: ${round(sr_band[0],2)} | Current: ${ticker_history[-1].close} | HB: ${round(sr_band[1],2)})"
+                return AlertType.SUPPORT_RESISTANCE_CONSOLIDATON#+f" (LB: ${round(sr_band[0],2)} | Current: ${ticker_history[-1].close} | HB: ${round(sr_band[1],2)})"
+                # return AlertType.SUPPORT_RESISTANCE_CONSOLIDATON+f" (LB: ${round(sr_band[0],2)} | Current: ${ticker_history[-1].close} | HB: ${round(sr_band[1],2)})"
 
         elif len(sr_band) == 1:
             # plus_minus = (0.25/100)*sr_band[0]
             _tmp_band = [sr_band[0] - plus_minus, sr_band[0] + plus_minus]
             if _tmp_band[0] <= ticker_history[-1].close <= _tmp_band[1]:
-                return AlertType.SR_CONSOLIDATING+f" (LB: ${round(_tmp_band[0],2)} | Current: ${ticker_history[-1].close} | HB: ${round(_tmp_band[1],2)})"
+                return AlertType.SUPPORT_RESISTANCE_CONSOLIDATON#+f" (LB: ${round(_tmp_band[0],2)} | Current: ${ticker_history[-1].close} | HB: ${round(_tmp_band[1],2)})"
+                # return AlertType.SUPPORT_RESISTANCE_CONSOLIDATON+f" (LB: ${round(_tmp_band[0],2)} | Current: ${ticker_history[-1].close} | HB: ${round(_tmp_band[1],2)})"
                 pass
 
     #if we get here we are in a breakout, so we need to find out what band it's approaching
@@ -732,16 +750,20 @@ def determine_sr_direction(indicator_data,ticker,ticker_history, module_config,c
     if len(distance_to_points) == 0:
         if trending_positive:
 
-            return AlertType.ABOVE_HIGHEST_SR_BAND+f": ${flattened_levels[-1]}"
+            return AlertType.ABOVE_HIGHEST_SR_BAND#+f": ${flattened_levels[-1]}"
+            # return AlertType.ABOVE_HIGHEST_SR_BAND+f": ${flattened_levels[-1]}"
         else:
-            return AlertType.BELOW_LOWEST_SR_BAND+f" ${flattened_levels[0]}"
+            return AlertType.BELOW_LOWEST_SR_BAND#+f" ${flattened_levels[0]}"
+            # return AlertType.BELOW_LOWEST_SR_BAND+f" ${flattened_levels[0]}"
     else:
         # sr_band = indicator_data[min_index] if len(indicator_data[min_index]) > 1 else [sr_band[0] - plus_minus, sr_band[0] + plus_minus]
         distance_to_points.sort(key=lambda x: x, reverse=not trending_positive)
         if trending_positive:
-            return AlertType.SUPPORT_RESISTANCE_BREAKOUT_UP+f"==>${round(distance_to_points[0]+ticker_history[-1].close,2)} (${round(distance_to_points[0],2)}/{round(float(distance_to_points[0] / ticker_history[-1].close)*100,2)}%)"
+            # return AlertType.SUPPORT_RESISTANCE_BREAKOUT_UP+f"==>${round(distance_to_points[0]+ticker_history[-1].close,2)} (${round(distance_to_points[0],2)}/{round(float(distance_to_points[0] / ticker_history[-1].close)*100,2)}%)"
+            return AlertType.SUPPORT_RESISTANCE_BREAKOUT_UP#+f"==>${round(distance_to_points[0]+ticker_history[-1].close,2)} (${round(distance_to_points[0],2)}/{round(float(distance_to_points[0] / ticker_history[-1].close)*100,2)}%)"
         else:
-            return AlertType.SUPPORT_RESISTANCE_BREAKOUT_DOWN+f"==>${round(distance_to_points[0]+ticker_history[-1].close,2)} (${round(distance_to_points[0],2)}/{round(float(distance_to_points[0] / ticker_history[-1].close)*100,2)}%)"
+            # return AlertType.SUPPORT_RESISTANCE_BREAKOUT_DOWN+f"==>${round(distance_to_points[0]+ticker_history[-1].close,2)} (${round(distance_to_points[0],2)}/{round(float(distance_to_points[0] / ticker_history[-1].close)*100,2)}%)"
+            return AlertType.SUPPORT_RESISTANCE_BREAKOUT_DOWN#+f"==>${round(distance_to_points[0]+ticker_history[-1].close,2)} (${round(distance_to_points[0],2)}/{round(float(distance_to_points[0] / ticker_history[-1].close)*100,2)}%)"
 def determine_golden_cross_alert_type(indicator_data,ticker,ticker_history, module_config,connection=None):
     if did_golden_cross_alert(indicator_data,ticker,ticker_history,module_config):
         return AlertType.GOLDEN_CROSS_APPEARED
