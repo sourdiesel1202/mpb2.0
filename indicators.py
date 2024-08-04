@@ -192,13 +192,21 @@ def get_indicator_inventory():
             InventoryFunctionTypes.DETERMINE_ALERT_TYPE: determine_breakout_alert_type,
             InventoryFunctionTypes.IGNORE: ignore_breakout_reversal_alert,
             InventoryFunctionTypes.USE_N1_BARS: False
-        },Indicator.VIX_RSI: {
+        },
+        Indicator.VIX_RSI: {
             InventoryFunctionTypes.LOAD: load_vix_rsi,
             InventoryFunctionTypes.DID_ALERT: did_vix_rsi_alert,
             InventoryFunctionTypes.DETERMINE_ALERT_TYPE: determine_vix_rsi_alert_type,
-            InventoryFunctionTypes.IGNORE: ignore_vix_rsi_reversal_alert,
+            InventoryFunctionTypes.IGNORE: ignore_vix_rsi_alert,
             InventoryFunctionTypes.USE_N1_BARS: False
         },
+        Indicator.STOCHASTIC_RSI: {
+            InventoryFunctionTypes.LOAD: load_stochastic_rsi,
+            InventoryFunctionTypes.DID_ALERT: did_stochastic_rsi_alert,
+            InventoryFunctionTypes.DETERMINE_ALERT_TYPE: determine_stochastic_rsi_alert_type,
+            InventoryFunctionTypes.IGNORE: ignore_stochastic_rsi_alert,
+            InventoryFunctionTypes.USE_N1_BARS: False
+        }
 
 
     }
@@ -218,7 +226,7 @@ def ignore_golden_cross_alert(connection, alert_direction, ticker, ticker_histor
     pass
 def ignore_death_cross_alert(connection, alert_direction, ticker, ticker_history, module_config):
     pass
-def ignore_vix_rsi_reversal_alert(connection, alert_direction, ticker, ticker_history, module_config):
+def ignore_vix_rsi_alert(connection, alert_direction, ticker, ticker_history, module_config):
     pass
 def ignore_sma_alert(connection, alert_direction, ticker, ticker_history, module_config):
     pass
@@ -226,6 +234,8 @@ def ignore_sma_alert(connection, alert_direction, ticker, ticker_history, module
 def ignore_macd_alert(connection, alert_direction, ticker, ticker_history, module_config):
     pass
 
+def ignore_stochastic_rsi_alert(connection, alert_direction, ticker, ticker_history, module_config):
+    pass
 def ignore_rsi_alert(connection, alert_direction, ticker, ticker_history, module_config):
     pass
     # todo code this up
@@ -295,6 +305,11 @@ def load_death_cross(ticker,ticker_history, module_config,connection=None):
 #
 #
 #
+def load_stochastic_rsi(ticker, ticker_history, module_config,connection=None):
+    df = wrap(load_ticker_history_pd_frame(ticker, ticker_history))
+    return df['stochrsi']
+
+
 def load_rsi(ticker, ticker_history, module_config,connection=None):
     df = wrap(load_ticker_history_pd_frame(ticker, ticker_history))
     return df['rsi']
@@ -553,12 +568,24 @@ def did_support_resistance_alert(indicator_data,ticker,ticker_history, module_co
     if determine_sr_direction(indicator_data,ticker,ticker_history, module_config,connection=None) != AlertType.SUPPORT_RESISTANCE_CONSOLIDATON:
         return True
 def did_vix_rsi_alert(indicator_data,ticker,ticker_history, module_config,connection=None):
+    if module_config['logging']:
+        print(f"${ticker}: Checking RSI Alert, Comparing Value at {datetime.datetime.fromtimestamp(ticker_history[-1].timestamp / 1e3, tz=ZoneInfo('US/Eastern'))}:{ticker}: to value at {datetime.datetime.fromtimestamp(ticker_history[-2].timestamp / 1e3, tz=ZoneInfo('US/Eastern'))}:{ticker}:")
     try:
-        return did_rsi_alert(indicator_data, ticker, ticker_history, module_config, connection=None)
+        if indicator_data[ticker_history[-1].timestamp] > module_config['indicator_configs'][Indicator.VIX_RSI]['rsi_overbought_threshold'] or indicator_data[ticker_history[-1].timestamp] < module_config['indicator_configs'][Indicator.VIX_RSI]['rsi_oversold_threshold']:
+            return True
+        else:
+            return False
     except:
         return False
 
 
+def did_stochastic_rsi_alert(indicator_data,ticker,ticker_history, module_config,connection=None):
+    if module_config['logging']:
+        print(f"${ticker}: Checking STochastic RSI Alert, Comparing Value at {datetime.datetime.fromtimestamp(ticker_history[-1].timestamp / 1e3, tz=ZoneInfo('US/Eastern'))}:{ticker}: to value at {datetime.datetime.fromtimestamp(ticker_history[-2].timestamp / 1e3, tz=ZoneInfo('US/Eastern'))}:{ticker}:")
+    if indicator_data[ticker_history[-1].timestamp] > module_config['indicator_configs'][Indicator.STOCHASTIC_RSI]['rsi_overbought_threshold'] or indicator_data[ticker_history[-1].timestamp] < module_config['indicator_configs'][Indicator.STOCHASTIC_RSI]['rsi_oversold_threshold']:
+        return True
+    else:
+        return False
 def did_rsi_alert(indicator_data,ticker,ticker_history, module_config,connection=None):
     if module_config['logging']:
         print(f"${ticker}: Checking RSI Alert, Comparing Value at {datetime.datetime.fromtimestamp(ticker_history[-1].timestamp / 1e3, tz=ZoneInfo('US/Eastern'))}:{ticker}: to value at {datetime.datetime.fromtimestamp(ticker_history[-2].timestamp / 1e3, tz=ZoneInfo('US/Eastern'))}:{ticker}:")
@@ -613,6 +640,19 @@ def determine_vix_rsi_alert_type(indicator_data,ticker,ticker_history, module_co
     else:
         return AlertType.VIX_RSI_NORMAL
 
+def determine_stochastic_rsi_alert_type(indicator_data,ticker,ticker_history, module_config,connection=None):
+    if indicator_data[ticker_history[-1].timestamp] >= module_config['indicator_configs'][Indicator.STOCHASTIC_RSI]['rsi_overbought_threshold']:
+        if module_config['logging']:
+            entry_date = datetime.datetime.fromtimestamp(ticker_history[-1].timestamp / 1e3, tz=ZoneInfo('US/Eastern'))
+            print(f"{entry_date}:{ticker}: RSI determined to be {AlertType.RSI_OVERSOLD}: RSI: {indicator_data[ticker_history[-1].timestamp]} ")
+        return AlertType.STOCHASTIC_RSI_OVERBOUGHT
+    elif indicator_data[ticker_history[-1].timestamp] <= module_config['indicator_configs'][Indicator.STOCHASTIC_RSI]['rsi_oversold_threshold']:
+        if module_config['logging']:
+            entry_date = datetime.datetime.fromtimestamp(ticker_history[-1].timestamp / 1e3, tz=ZoneInfo('US/Eastern'))
+            print(f"{entry_date}:{ticker}: RSI determined to be {AlertType.RSI_OVERSOLD}: RSI: {indicator_data[ticker_history[-1].timestamp]} ")
+        return AlertType.STOCHASTIC_RSI_OVERSOLD
+    else:
+        return AlertType.STOCHASTIC_RSI_NORMAL
 def determine_rsi_alert_type(indicator_data,ticker,ticker_history, module_config,connection=None):
     if indicator_data[ticker_history[-1].timestamp] >= module_config['indicator_configs'][Indicator.RSI]['rsi_overbought_threshold']:
         if module_config['logging']:

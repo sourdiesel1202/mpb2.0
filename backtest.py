@@ -4,7 +4,7 @@ from history import load_ticker_history_pd_frame
 from strategy import IronCondor, Strategy, LongCall, LongPut
 from stockstats import wrap
 from indicators import load_rsi, get_indicator_inventory, load_macd, load_sma, load_dmi_adx, load_breakout, \
-    load_death_cross, load_golden_cross, load_support_resistance, load_vix_rsi
+    load_death_cross, load_golden_cross, load_support_resistance, load_vix_rsi, load_stochastic_rsi
 
 
 def perform_backtest(ticker, ticker_history, strategy_type, module_config, connection=None):
@@ -142,6 +142,8 @@ def load_indicator_data(ticker, ticker_history, module_config, connection):
             indicator_dict[indicator]=load_support_resistance(ticker, ticker_history, module_config)
         if indicator == Indicator.VIX_RSI:
             indicator_dict[indicator]=load_vix_rsi(ticker, ticker_history, module_config, connection=connection)
+        if indicator == Indicator.STOCHASTIC_RSI:
+            indicator_dict[indicator]=load_stochastic_rsi(ticker, ticker_history, module_config, connection=connection)
         if indicator in  [Indicator.ADX, Indicator.DMI, Indicator.ADX_REVERSAL]:
             indicator_dict[indicator]=load_dmi_adx(ticker, ticker_history, module_config)
 

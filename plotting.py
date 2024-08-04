@@ -5,7 +5,8 @@ import pandas as pd
 from enums import PositionType
 # import s3
 from history import load_ticker_history_pd_frame
-from indicators import load_macd, load_sma, load_dmi_adx, load_rsi, load_support_resistance, load_breakout, load_vix_rsi
+from indicators import load_macd, load_sma, load_dmi_adx, load_rsi, load_support_resistance, load_breakout, \
+    load_vix_rsi, load_stochastic_rsi
 from indicators import load_dmi_adx
 from indicators import  load_death_cross, load_golden_cross, determine_death_cross_alert_type,determine_golden_cross_alert_type, did_golden_cross_alert, did_death_cross_alert
 
@@ -265,6 +266,12 @@ def build_indicator_dict(ticker, ticker_history, module_config, connection):
         "rsi": {
             "plot": plot_indicator_data(ticker, ticker_history[-module_config['plot_bars']:],
                                         load_rsi(ticker, ticker_history, module_config),
+                                        module_config, name='rsi', color='Blue'),
+            "overlay": False
+        },
+        "stochastic_rsi": {
+            "plot": plot_indicator_data(ticker, ticker_history[-module_config['plot_bars']:],
+                                        load_stochastic_rsi(ticker, ticker_history, module_config),
                                         module_config, name='rsi', color='Blue'),
             "overlay": False
         },
