@@ -44,7 +44,7 @@
   },
   "BREAKOUT": {
     "inverse": false,
-    "require_alert_type": false,
+    "require_alert_type": true,
     "alert_type": "BREAKOUT_CROSSOVER_BULLISH"
   },
   "VIX_RSI": {

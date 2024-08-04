@@ -5,8 +5,20 @@ from history import TickerHistory
 from history import write_ticker_history_db_entries
 from functions import obtain_db_connection, load_module_config, execute_query, read_csv
 from indicators import process_ticker_history
+import os
 # from common import *
 
+def download_raw_yahoo_data(ticker,module_config):
+    # for ticker in module_config['tickers']:
+    print(f"Downloading data for {ticker}")
+    timestamp = int(int(time.mktime(datetime.datetime.now().timetuple())) * 1e3)
+    timestamp = str(time.time()).split('.')[0]
+    # print(f"curl -o data/yahoo/{ticker}.csv https://query1.finance.yahoo.com/v7/finance/download/SPY?period1=1185148800&period2=1724284800&interval=1d&events=history&includeAdjustedClose=true")
+    # print(f"wget https://query1.finance.yahoo.com/v7/finance/download/{ticker}?period1=774921600&period2={datetime.datetime.now().timestamp}&interval=1d&events=history&includeAdjustedClose=true -P data/yahoo")
+    url = f"curl -o data/yahoo/{ticker}.csv https://query1.finance.yahoo.com/v7/finance/download/{ticker}?period2={timestamp}&period1=1185148800&interval=1d&events=history&includeAdjustedClose=true"
+    print(url)
+    os.system(url)
+    time.sleep(2) #wait for download
 def process_raw_yahoo_data(raw_data, module_config):
     #basically here convert realtime to usable data
     ticker_history=[]
@@ -31,6 +43,7 @@ if __name__ == '__main__':
         print(f"Loading Ticker Data for {len(tickers)} tickers")
         for ticker in tickers:
             print(f"Loading data for {ticker}")
+            download_raw_yahoo_data(ticker,module_config)
             raw_data = read_csv(f"{module_config['data_dir']}/{ticker}.csv")
             ticker_history = process_raw_yahoo_data(raw_data, module_config)
             write_ticker_history_db_entries(connection, ticker, ticker_history,module_config, auto_commit=True, cache=False)

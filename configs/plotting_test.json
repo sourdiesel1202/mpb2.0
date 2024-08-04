@@ -4,12 +4,12 @@
 
   "strategy": "LONG_CALL",
   "test_mode": false,
-  "tickers": ["SPY", "QQQ", "DIA"],
+  "tickers": ["SPY", "QQQ", "DIA", "F"],
   "timespan": "day",
   "plot_bars": 5000,
   "timespan_multiplier": 1,
   "use_indicators": true,
-  "indicators": [ "VIX_RSI"],
+  "indicators": [ "BREAKOUT"],
   "indicator_initial_range":300
 
 }
