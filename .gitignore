@@ -1,5 +1,5 @@
 sql/*
-configs/*
+configs/database.json
 data/*
 .idea/*
 *.pyc

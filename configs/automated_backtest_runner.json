@@ -1,0 +1,4 @@
+{
+  "strategies": ["LONG_CALL", "LONG_PUT", "IRON_CONDOR"],
+  "indicators": ["BREAKOUT", "SMA", "RSI"]
+}

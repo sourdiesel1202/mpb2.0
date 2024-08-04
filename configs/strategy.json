@@ -1,0 +1,14 @@
+{"IRON_CONDOR": {
+      "width": 5,
+      "strategy_generation_type": "PERCENTAGE",
+      "strategy_generation_value":4,
+      "position_length" : 20
+
+    },
+    "LONG_PUT":{
+      "position_length": 2
+    },
+    "LONG_CALL":{
+      "position_length": 2
+    }
+}

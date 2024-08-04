@@ -1,0 +1,13 @@
+{
+  "data_dir": "data/yahoo",
+  "database": {
+    "host": "localhost",
+    "username": "root",
+    "password": "Smiley9201a21fs",
+    "db": "mpb"
+  },
+  "timespan": "day",
+  "timespan_multiplier": 1,
+
+  "tickers": [ "DIA"]
+}
