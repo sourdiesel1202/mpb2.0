@@ -1,5 +1,6 @@
 import datetime
 import json
+import os
 import time
 import traceback
 from collections import ChainMap
@@ -9,12 +10,25 @@ from history import TickerHistory, load_ticker_history_db
 from history import write_ticker_history_db_entries
 from functions import obtain_db_connection, load_module_config, execute_query, read_csv, \
     calculate_x_is_what_percentage_of_y, calculate_what_is_x_percentage_of_y, all_possible_combinations, \
-    get_permutations, write_csv, human_readable_datetime
+    get_permutations, write_csv, human_readable_datetime, process_list_concurrently, combine_csvs
 from indicators import process_ticker_history
 from strategy import IronCondor
 from backtest import perform_backtest, print_backtest_results
 
+
 # from common import *
+class AutomatedBacktest:
+    def __init__(self, ticker, ticker_history, strategy, indicators, module_config):
+        self.ticker = ticker
+        self.ticker_history = ticker_history
+        self.strategy = strategy
+        self.indicators = indicators
+        self.module_config = module_config
+
+    def perform_backtest(self,connection):
+        backtest_results = perform_backtest(self.ticker, self.ticker_history, self.strategy, self.module_config,connection)
+        return [self.ticker, self.strategy, '|'.join(self.indicators), len(backtest_results['positions']),backtest_results['winners'], backtest_results['losers'],calculate_x_is_what_percentage_of_y(backtest_results['winners'],len(backtest_results['positions'])),json.dumps(self.module_config['indicator_configs']),json.dumps(self.module_config['strategy_configs'])]
+
 
 def set_base_indicator_values( module_config):
     for indicator in module_config['indicators']:
@@ -139,6 +153,19 @@ def generate_indicator_configs( module_config):
     return indicator_configs
 
 
+def _perform_automated_subprocess_backtest(backtest_objects):
+    _connection = obtain_db_connection(backtest_objects[0].module_config)
+    try:
+        backtest_report = [["ticker", "strategy", "indicators", "total_positions", "winners", "losers", "percentage", "indicator_configs","strategy_configs"]]
+        for backtest_object in backtest_objects:
+            backtest_report.append(backtest_object.perform_backtest(_connection))
+        write_csv(f"data/backtests/{os.getpid()}backtest.csv", backtest_report)
+        _connection.close()
+    except Exception as e:
+        traceback.print_exc()
+        _connection.close()
+        raise e
+
 def _perform_automated_backtest( module_config, connection):
     # pass
     #ok so here is where we will do the automated backtest
@@ -149,8 +176,8 @@ def _perform_automated_backtest( module_config, connection):
     strategy_configs = generate_strategy_configs(module_config)
     #now the fun part
     #iterate over the strategy configs
-    backtest_report = [["ticker", "strategy", "indicators", "total_positions", "winners", "losers", "percentage", "indicator_configs","strategy_configs"]]
 
+    backtests = []
     for ticker in module_config['tickers']:
         ticker_history = load_ticker_history_db(ticker, module_config, connection)
         for strategy_config in strategy_configs:
@@ -168,11 +195,15 @@ def _perform_automated_backtest( module_config, connection):
                         tmp_module_config['indicator_configs']=indicator_config
                         tmp_module_config['indicators']=indicator_list
                         tmp_module_config['use_indicators']=True
-                        backtest_results = perform_backtest(ticker, ticker_history, strategy, tmp_module_config,connection)
-                        backtest_report.append([ticker,strategy,'|'.join(indicator_list),len(backtest_results['positions']), backtest_results['winners'], backtest_results['losers'],calculate_x_is_what_percentage_of_y(backtest_results['winners'], len(backtest_results['positions'])), json.dumps(indicator_config), json.dumps(strategy_config)])
-    return backtest_report
-    # for field, min_max in module_config['indicator_manipulations'][indicator]['integer_values'].items()
 
+                        backtests.append(AutomatedBacktest(ticker, ticker_history, strategy,indicator_list,  tmp_module_config))
+                        # backtest_results = perform_backtest(ticker, ticker_history, strategy, tmp_module_config,connection)
+                        # backtest_report.append([ticker,strategy,'|'.join(indicator_list),len(backtest_results['positions']), backtest_results['winners'], backtest_results['losers'],calculate_x_is_what_percentage_of_y(backtest_results['winners'], len(backtest_results['positions'])), json.dumps(indicator_config), json.dumps(strategy_config)])
+    # return backtest_report
+    # for field, min_max in module_config['indicator_manipulations'][indicator]['integer_values'].items()
+    pids = process_list_concurrently(backtests, _perform_automated_subprocess_backtest,int(len(backtests)/module_config['num_processes']))
+    files = [f"data/backtests/{pid}backtest.csv" for pid in pids]
+    write_csv(f"data/backtests/backtest.csv",combine_csvs(files))
     # pass
 if __name__ == '__main__':
 
@@ -181,7 +212,9 @@ if __name__ == '__main__':
     connection = obtain_db_connection(module_config)
 
     try:
-        write_csv(f"data/backtests/{human_readable_datetime(datetime.datetime.now())}_backtest.csv",_perform_automated_backtest( module_config, connection))
+        module_config['automate_indicators']=[x for x in module_config['indicator_manipulations'].keys()
+                                              ]
+        _perform_automated_backtest( module_config, connection)
 
         connection.close()
 

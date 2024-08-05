@@ -7,13 +7,14 @@
     "LONG_PUT",
     "IRON_CONDOR"
 
+
   ],
   "automate_indicators": [
-    "MACD",
-    "RSI"
+    "MACD"
   ],
   "indicator_initial_range":300,
   "logging":true,
+  "num_processes": 10,
   "strategy_manipulations": {
     "LONG_CALL": {
       "integer_values": {
@@ -51,10 +52,49 @@
         "RSI_NORMAL"
       ]
     },
+        "VIX_RSI": {
+      "integer_values": {
+        "rsi_overbought_threshold": [
+          50,
+          99
+        ],
+        "rsi_oversold_threshold": [
+          0,
+          49
+        ]
+      },
+      "required_alerts": [
+        "VIX_RSI_OVERBOUGHT",
+        "VIX_RSI_OVERSOLD",
+        "VIX_RSI_NORMAL"
+      ]
+    },
     "MACD": {
       "required_alerts": [
         "MACD_SIGNAL_CROSS_MACD",
         "MACD_MACD_CROSS_SIGNAL"
+      ]
+    },
+    "DEATH_CROSS": {
+      "required_alerts": [
+        "DEATH_CROSS_APPEARED"
+      ]
+    },
+    "GOLDEN_CROSS": {
+      "required_alerts": [
+        "GOLDEN_CROSS_APPEARED"
+      ]
+    },
+    "DMI": {
+      "required_alerts": [
+        "BREAKOUT_CROSSOVER_BEARISH",
+        "BREAKOUT_CROSSOVER_BULLISH"
+      ]
+    },
+    "BREAKOUT": {
+      "required_alerts": [
+        "DMIPLUS_CROSSOVER_DMINEG",
+        "DMINEG_CROSSOVER_DMIPLUS"
       ]
     },
     "SMA": {
@@ -71,8 +111,25 @@
     },
     "ADX_REVERSAL": {
       "required_alerts": [
-        "MACD_SIGNAL_CROSS_MACD",
-        "MACD_MACD_CROSS_SIGNAL"
+        "ADX_REVERSAL_BEARISH",
+        "ADX_REVERSAL_BULLISH"
+      ]
+    },
+    "STOCHASTIC_RSI": {
+      "integer_values": {
+        "rsi_overbought_threshold": [
+          50,
+          99
+        ],
+        "rsi_oversold_threshold": [
+          0,
+          49
+        ]
+      },
+      "required_alerts": [
+        "STOCHASTIC_RSI_OVERSOLD",
+        "STOCHASTIC_OVERSOLD",
+        "STOCHASTIC_NORMAL"
       ]
     }
   },
