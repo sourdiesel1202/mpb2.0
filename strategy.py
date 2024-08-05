@@ -15,6 +15,7 @@ class Strategy:
     def __init__(self, open_date, length):
         self.open_date=open_date
         self.length=length
+        self.profitable = False
     def is_profitable(self, ticker_price,module_config):
         '''
         this method determines whether a strategy would be profitable i.e. would it make money or lose money
@@ -37,7 +38,9 @@ class LongCall(Strategy):
     def is_profitable(self, ticker_history, module_config):
         if module_config['logging']:
             print(f"Checking Profitabilty of {str(self)}, opened on {self.open_date} closed on {ticker_history.dt} held for {module_config['strategy_configs'][module_config['strategy']]['position_length']}")
-        return self.strike.strike < ticker_history.close
+        self.profitable = self.strike.strike < ticker_history.close
+        return  self.profitable
+
 
     def legs(self):
         return [self.strike]
@@ -51,7 +54,8 @@ class LongPut(Strategy):
     def is_profitable(self, ticker_history, module_config):
         if module_config['logging']:
             print(f"Checking Profitabilty of {str(self)}, opened on {self.open_date} closed on {ticker_history.dt} held for {module_config['strategy_configs'][module_config['strategy']]['position_length']}")
-        return self.strike.strike > ticker_history.close
+        self.profitable = self.strike.strike > ticker_history.close
+        return self.profitable
     def legs(self):
         return [self.strike]
     def __str__(self):
@@ -87,7 +91,8 @@ class IronCondor(Strategy):
     def is_profitable(self, ticker_history, module_config):
         if module_config['logging']:
             print(f"Checking Profitabilty of {str(self)}, opened on {self.open_date} closed on {ticker_history.dt} held for {module_config['strategy_configs'][module_config['strategy']]['position_length']}")
-        return self.is_itm(ticker_history.close, module_config)
+        self.profitable = self.is_itm(ticker_history.close, module_config)
+        return self.profitable
     def is_atm(self, ticker_price, module_config):
         # ticker_price=ticker_history.close
         return (self.long_put.strike_price <= ticker_price <= self.short_put.strike_price) or (self.short_call.strike_price <= ticker_price <= self.long_call.strike_price)

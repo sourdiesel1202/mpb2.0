@@ -59,8 +59,8 @@
     "inverse": false,
     "require_alert_type": true,
     "alert_type": "STOCHASTIC_RSI_OVERSOLD",
-    "rsi_overbought_threshold": 80,
-    "rsi_oversold_threshold": 10
+    "rsi_overbought_threshold": 90,
+    "rsi_oversold_threshold": 5
   },
   "VIX_SMA": {
     "inverse": false,

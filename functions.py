@@ -1,4 +1,5 @@
 import datetime
+import itertools
 import json, csv, os
 import multiprocessing
 import time
@@ -206,3 +207,22 @@ def execute_update(connection,sql, auto_commit=True, verbose=False, cache=True):
     except:
         cursor.close()
         traceback.print_exc()
+def get_permutations(lists):
+    unique_combinations = []
+
+    # Getting all permutations of list_1
+    # with length of list_2
+    # permut =
+
+    # zip() is called to pair each permutation
+    # and shorter list element into combination
+    # for comb in permut:
+        # zipped = zip(comb, list_2)
+        # unique_combinations.append(list(zipped))
+    return  list(itertools.product(*lists))
+def all_possible_combinations(list_of_stuff):
+    combos=[]
+    for L in range(len(list_of_stuff) + 1):
+        for subset in itertools.combinations(list_of_stuff, L):
+            combos.append(list(subset))
+    return combos

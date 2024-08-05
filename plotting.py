@@ -182,7 +182,7 @@ def plot_strategy_lines(ticker, ticker_history,strategy_data, module_config):
                 x=x,
                 y=y,
                 mode="lines+text",
-                line={'width': 2, 'color': 'red' if leg.type == PositionType.SHORT else 'green', 'dash': 'solid'},
+                line={'width': 2, 'color': 'red' if not position.profitable else 'green', 'dash': 'dash' if leg.type == PositionType.SHORT else 'solid'},
                 name=f"{str(position)} {str(leg)}",
                 text=text,
                 textposition="bottom left"
