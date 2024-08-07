@@ -1,0 +1,10 @@
+{
+  "data_dir": "data/yahoo",
+
+  "timespan": "day",
+  "timespan_multiplier": 1,
+
+  "tickers": [ "EBAY"],
+  "test_mode": false,
+  "logging": false
+}

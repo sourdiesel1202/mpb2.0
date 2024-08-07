@@ -1,12 +1,18 @@
 {
   "RSI": {
     "rsi_overbought_threshold": 60,
-    "rsi_oversold_threshold": 40,
+    "rsi_oversold_threshold": 30,
     "inverse": true,
     "require_alert_type": true,
     "alert_type": "RSI_OVERSOLD"
   },
   "MACD": {
+    "inverse": false,
+    "require_alert_type": true,
+    "alert_type": "MACD_SIGNAL_CROSS_MACD"
+  },
+  "ADX": {
+    "adx_threshold": 20,
     "inverse": false,
     "require_alert_type": true,
     "alert_type": "MACD_SIGNAL_CROSS_MACD"
@@ -52,7 +58,7 @@
     "require_alert_type": true,
     "alert_type": "VIX_RSI_OVERBOUGHT",
     "vix_source": "VIXY",
-    "rsi_overbought_threshold": 60,
+    "rsi_overbought_threshold": 65,
     "rsi_oversold_threshold": 40
   },
   "STOCHASTIC_RSI": {

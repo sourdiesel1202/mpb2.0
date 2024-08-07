@@ -4,5 +4,5 @@
   "timespan": "day",
   "timespan_multiplier": 1,
 
-  "tickers": [ "VIXY", "GOOG", "SPY", "DIA", "QQQ", "TSLA", "AAPL","F", "VZ"]
+  "tickers": [ "VIXY", "GOOG", "SPY", "DIA", "QQQ", "TSLA", "AAPL","F", "VZ", "ETSY", "FOX", "EBAY"]
 }

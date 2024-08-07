@@ -6,10 +6,10 @@
   "test_mode": false,
   "tickers": ["SPY", "QQQ", "DIA", "F", "GOOG", "VZ"],
   "timespan": "day",
-  "plot_bars": 720,
+  "plot_bars": 7000,
   "timespan_multiplier": 1,
   "use_indicators": true,
-  "indicators": [ "STOCHASTIC_RSI"],
+  "indicators": ["RSI", "VIX_RSI"],
   "indicator_initial_range":300
 
 }

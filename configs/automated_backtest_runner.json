@@ -3,33 +3,32 @@
     "SPY"
   ],
   "strategies": [
-    "LONG_CALL",
-    "LONG_PUT",
     "IRON_CONDOR"
 
 
   ],
   "automate_indicators": [
-    "MACD"
+    "RSI"
   ],
+  "all_indicators" : false,
   "indicator_initial_range":300,
   "logging":true,
   "num_processes": 10,
   "strategy_manipulations": {
     "LONG_CALL": {
       "integer_values": {
-        "position_length": [1, 60]
+        "position_length": [1, 30]
       }
     },
     "LONG_PUT": {
       "integer_values": {
-        "position_length": [1, 60]
+        "position_length": [1, 30]
       }
     },
     "IRON_CONDOR": {
       "integer_values": {
         "width": [1, 10],
-        "position_length": [1, 60],
+        "position_length": [1, 30],
         "strategy_generation_value": [1,10]
       }
     }

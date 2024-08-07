@@ -338,7 +338,48 @@ def load_ticker_history_csv(ticker, ticker_history, convert_to_datetime=False, h
             rows.append([entry.timestamp, entry.open, entry.close, entry.high, entry.low, entry.volume])
     return  rows
 
+def load_ticker_histories_data_frame(tickers, connection, module_config):
+    '''
+    Load multiple ticker histories into a multiindex dataframe
+    :param ticker:
+    :param ticker_history:
+    :param convert_to_datetime:
+    :param human_readable:
+    :return:
+    '''
+    #ok so here we're going to generate the ticker data frame
+    # _str = generate_csv_string(load_ticker_history_csv(ticker,ticker_history,convert_to_datetime=convert_to_datetime, human_readable=human_readable))
+    # df = pd.read_csv(io.StringIO(_str), sep=",")
+    # data = {'open': pd.Series([x.open for x in ticker_history]),'close': pd.Series([x.close for x in ticker_history]), 'high': pd.Series([x.high for x in ticker_history]),'low': pd.Series([x.low for x in ticker_history]), 'volume': pd.Series([x.volume for x in ticker_history])}
 
+    # data = {'open': pd.Series([x.open for x in ticker_history], index=[x.dt for x in ticker_history]),'close': pd.Series([x.close for x in ticker_history],index=[x.dt for x in ticker_history]), 'high': pd.Series([x.high for x in ticker_history],index=[x.dt for x in ticker_history]),'low': pd.Series([x.low for x in ticker_history],index=[x.dt for x in ticker_history]), 'volume': pd.Series([x.volume for x in ticker_history],index=[x.dt for x in ticker_history])}
+    data={}
+    for ticker in tickers:
+        ticker_history = load_ticker_history_db(ticker, module_config,connection)
+        data[ticker]={'open': pd.Series([x.open for x in ticker_history], index=[x.dt for x in ticker_history]),'close': pd.Series([x.close for x in ticker_history],index=[x.dt for x in ticker_history]), 'high': pd.Series([x.high for x in ticker_history],index=[x.dt for x in ticker_history]),'low': pd.Series([x.low for x in ticker_history],index=[x.dt for x in ticker_history]), 'volume': pd.Series([x.volume for x in ticker_history],index=[x.dt for x in ticker_history])}
+    return pd.DataFrame({(outerKey, innerKey): values for outerKey, innerDict in data.items() for innerKey, values in innerDict.items()})
+def convert_ticker_history_to_data_frame(ticker, ticker_history, convert_to_datetime=False, human_readable=False):
+    '''
+    A testament to a pain in the ass
+    :param ticker:
+    :param ticker_history:
+    :param convert_to_datetime:
+    :param human_readable:
+    :return:
+    '''
+    #ok so here we're going to generate the ticker data frame
+    # _str = generate_csv_string(load_ticker_history_csv(ticker,ticker_history,convert_to_datetime=convert_to_datetime, human_readable=human_readable))
+    # df = pd.read_csv(io.StringIO(_str), sep=",")
+    # data = {'open': pd.Series([x.open for x in ticker_history]),'close': pd.Series([x.close for x in ticker_history]), 'high': pd.Series([x.high for x in ticker_history]),'low': pd.Series([x.low for x in ticker_history]), 'volume': pd.Series([x.volume for x in ticker_history])}
+
+    # data = {'open': pd.Series([x.open for x in ticker_history], index=[x.dt for x in ticker_history]),'close': pd.Series([x.close for x in ticker_history],index=[x.dt for x in ticker_history]), 'high': pd.Series([x.high for x in ticker_history],index=[x.dt for x in ticker_history]),'low': pd.Series([x.low for x in ticker_history],index=[x.dt for x in ticker_history]), 'volume': pd.Series([x.volume for x in ticker_history],index=[x.dt for x in ticker_history])}
+    data = {ticker:{'open': pd.Series([x.open for x in ticker_history], index=[x.dt for x in ticker_history]),'close': pd.Series([x.close for x in ticker_history],index=[x.dt for x in ticker_history]), 'high': pd.Series([x.high for x in ticker_history],index=[x.dt for x in ticker_history]),'low': pd.Series([x.low for x in ticker_history],index=[x.dt for x in ticker_history]), 'volume': pd.Series([x.volume for x in ticker_history],index=[x.dt for x in ticker_history])}}
+    reform = {(outerKey, innerKey): values for outerKey, innerDict in data.items() for innerKey, values in innerDict.items()}
+    tmp = pd.DataFrame(reform)
+    print(tmp)
+
+
+    return tmp
 def load_ticker_history_pd_frame(ticker, ticker_history, convert_to_datetime=False, human_readable=False):
     _str = generate_csv_string(load_ticker_history_csv(ticker,ticker_history,convert_to_datetime=convert_to_datetime, human_readable=human_readable))
     df = pd.read_csv(io.StringIO(_str), sep=",")

@@ -36,6 +36,8 @@ def set_base_indicator_values( module_config):
             module_config['indicator_configs'][indicator][field]=min_max[0]
 def generate_strategy_config_combinations(strategy, module_config):
     # first generate the list of possible values
+    if module_config['logging']:
+        print(f"Generating strategy config combinations")
     if 'integer_values' in module_config['strategy_manipulations'][strategy]:
         integer_field_values = []
         for integer_field, value_range in module_config['strategy_manipulations'][strategy]['integer_values'].items():
@@ -47,11 +49,15 @@ def generate_strategy_config_combinations(strategy, module_config):
                            module_config['strategy_manipulations'][strategy]['integer_values'][integer_field][1]):
                 integer_field_values[-1].append({integer_field: i})
                 # in
+        if module_config['logging']:
+            print(f"Generating strategy integer permutations")
         integer_permutations = get_permutations(integer_field_values)
 
     else:
         integer_permutations = [{}]  # if there are none add one as the basis for  the generation
     config_combinations = []
+    if module_config['logging']:
+        print(f"Building strategy configs for {len(integer_permutations)} permutations of {strategy} configs")
     for i in range(0, len(integer_permutations)):
         # new_permutation = copy(integer_permutations[i])
         new_permutation = {}
@@ -91,12 +97,18 @@ def generate_indicator_config_combinations(indicator, module_config):
             for i in range(module_config['indicator_manipulations'][indicator]['integer_values'][integer_field][0],module_config['indicator_manipulations'][indicator]['integer_values'][integer_field][1]):
                 integer_field_values[-1].append({integer_field:i})
                 # in
+        if module_config['logging']:
+            print(f"Generating indicator permutations for {indicator}")
         integer_permutations = get_permutations(integer_field_values)
 
     else:
         integer_permutations = [{}]# if there are none add one as the basis for  the generation
     config_combinations = []
+    if module_config['logging']:
+        print(f"Generating indicator config combinations for {len(integer_permutations)} permutations of {indicator}")
     for i in range(0, len(integer_permutations)):
+        if module_config['logging']:
+            print(f"Processing {i+1}/{ len(integer_permutations)} permutations of {indicator}")
         integer_permutation= copy(integer_permutations[i])
 
         for inverse_flag in [True, False]:
@@ -124,6 +136,8 @@ def generate_indicator_config_combinations(indicator, module_config):
     #last generate the list with the different required alerts
 def generate_strategy_configs( module_config):
     strategy_combinations = []
+    if module_config['logging']:
+        print(f"Generating strategy configs")
     for strategy in module_config['strategies']:
         strategy_combinations.append(generate_strategy_config_combinations(strategy,module_config))
 
@@ -139,10 +153,16 @@ def generate_strategy_configs( module_config):
 def generate_indicator_configs( module_config):
     #so the idea here is that we'll generate a list of all possible indicator_configs values based upon
     #the base values set
+    if module_config['logging']:
+        print(f"Generating indicator configs")
     indicator_combinations = []
 
     for indicator in module_config['automate_indicators']:
+        if module_config['logging']:
+            print(f"Processing for {indicator}")
         indicator_combinations.append(generate_indicator_config_combinations(indicator, module_config))
+    if module_config['logging']:
+        print(f"Finished generating indicator configs, now creating potential scenarios")
     indicator_permutations = get_permutations(indicator_combinations)
     indicator_configs = []
     for permutation in indicator_permutations:
@@ -212,7 +232,8 @@ if __name__ == '__main__':
     connection = obtain_db_connection(module_config)
 
     try:
-        module_config['automate_indicators']=[x for x in module_config['indicator_manipulations'].keys()
+        if module_config['all_indicators']:
+            module_config['automate_indicators']=[x for x in module_config['indicator_manipulations'].keys()
                                               ]
         _perform_automated_backtest( module_config, connection)
 

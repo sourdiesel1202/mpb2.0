@@ -11,7 +11,7 @@ from functools import partial
 from enums import OrderType
 import datetime
 from zoneinfo import ZoneInfo
-from history import load_ticker_history_pd_frame, load_ticker_history_cached, load_ticker_history_db
+from history import load_ticker_history_pd_frame, load_ticker_history_cached, load_ticker_history_db, convert_ticker_history_to_data_frame
 from stockstats import wrap
 from enums import *
 from shape import compare_tickers, compare_tickers_at_index
@@ -26,7 +26,7 @@ from tickers import load_ticker_symbol_by_id, load_ticker_history_by_id
 
 
 # today =datetime.datetime.now().strftime("%Y-%m-%d")
-def process_ticker_history(connection, ticker,ticker_history, module_config, validate=True, process_alerts=True):
+def process_ticker_history(connection, ticker,ticker_history, module_config,  process_alerts=True):
     from validation import process_ticker_validation
     '''
     This function is where we're going to process our overall ticker history entries
@@ -48,12 +48,12 @@ def process_ticker_history(connection, ticker,ticker_history, module_config, val
         process_ticker_alerts(connection, ticker,ticker_history, module_config)
         print(f"Processed ticker alerts for {ticker}")
     #now we process validation
-    if validate:
-        process_ticker_validation(connection, ticker, ticker_history, module_config)
+    # if validate:
+    #     process_ticker_validation(connection, ticker, ticker_history, module_config)
     # ticker_last_updated = load_ticker_last_updated(ticker, connection, module_config)
     # execute_update(connection, "lock tables lines_similarline write, history_tickerhistory read, tickers_ticker read")
 
-    execute_update(connection, f"insert into lines_similarline (ticker_id, ticker_history_id, backward_range, forward_range) values ((select id from tickers_ticker where symbol='{ticker}'), (select id from history_tickerhistory where timestamp=(select coalesce(max(timestamp), round(1000 * unix_timestamp(date_sub(now(), interval 365 day)))) from history_tickerhistory where ticker_id=(select id from tickers_ticker where symbol='{ticker}') and timespan='{module_config['timespan']}' and timespan_multiplier='{module_config['timespan_multiplier']}) and timespan='{module_config['timespan']}' and timespan_multiplier='{module_config['timespan_multiplier']}' and ticker_id=(select id from tickers_ticker where symbol='{ticker}')), 1,1)", auto_commit=False, cache=True)
+    # execute_update(connection, f"insert into lines_similarline (ticker_id, ticker_history_id, backward_range, forward_range) values ((select id from tickers_ticker where symbol='{ticker}'), (select id from history_tickerhistory where timestamp=(select coalesce(max(timestamp), round(1000 * unix_timestamp(date_sub(now(), interval 365 day)))) from history_tickerhistory where ticker_id=(select id from tickers_ticker where symbol='{ticker}') and timespan='{module_config['timespan']}' and timespan_multiplier='{module_config['timespan_multiplier']}) and timespan='{module_config['timespan']}' and timespan_multiplier='{module_config['timespan_multiplier']}' and ticker_id=(select id from tickers_ticker where symbol='{ticker}')), 1,1)", auto_commit=False, cache=True)
 def process_ticker_alerts(connection, ticker, ticker_history, module_config):
     '''
     Similar to above, this function is to process ticker history and flag any alerts
@@ -81,7 +81,7 @@ def process_ticker_alerts(connection, ticker, ticker_history, module_config):
         if function_dict[InventoryFunctionTypes.DID_ALERT](function_dict[InventoryFunctionTypes.LOAD](ticker, ticker_history,module_config, connection=connection), ticker, ticker_history, module_config, connection=connection):
             #alert did fire, so now we need to write the alert
             try:
-                values_list.append(f"('{function_dict[InventoryFunctionTypes.DETERMINE_ALERT_TYPE](function_dict[InventoryFunctionTypes.LOAD](ticker, ticker_history,module_config, connection=connection), ticker, ticker_history, module_config, connection=connection)}',(select id from history_tickerhistory where timestamp={ticker_history[-1].timestamp} and ticker_id=(select id from tickers_ticker where symbol='{ticker}') and timespan='{module_config['timespan']}' and timespan_multiplier='{module_config['timespan_multiplier']}'))")
+                values_list.append(f"((select id from indicators_indicator where name='{indicator}'),'{function_dict[InventoryFunctionTypes.DETERMINE_ALERT_TYPE](function_dict[InventoryFunctionTypes.LOAD](ticker, ticker_history,module_config, connection=connection), ticker, ticker_history, module_config, connection=connection)}',(select id from history_tickerhistory where timestamp={ticker_history[-1].timestamp} and ticker_id=(select id from tickers_ticker where symbol='{ticker}') and timespan='{module_config['timespan']}' and timespan_multiplier='{module_config['timespan_multiplier']}'))")
                 # write_ticker_alert(connection, function_dict[InventoryFunctionTypes.DETERMINE_ALERT_TYPE](function_dict[InventoryFunctionTypes.LOAD](ticker, ticker_history,module_config), ticker, ticker_history, module_config), ticker, _th,module_config )
             except:
                 traceback.print_exc()
@@ -89,7 +89,8 @@ def process_ticker_alerts(connection, ticker, ticker_history, module_config):
     # execute_update(connection, "lock tables alerts_tickeralert write, history_tickerhistory read, tickers_ticker read")
     if len(values_list) > 0:
         # execute_query(connection,f"select * from alerts_tickeralert where ticker_history_id=(select max(id) from history_tickerhistory where ticker_id=(select id from tickers_ticker where symbol='{ticker}') and timespan='{module_config['timespan']}' and timespan_multiplier='{module_config['timespan_multiplier']}')", verbose=False)
-        execute_update(connection,f"insert ignore into alerts_tickeralert (alert_type, ticker_history_id) values {','.join(values_list)}",auto_commit=False, verbose=False, cache=True)
+        print(f"insert ignore into alerts_indicatoralert (indicator_id,alert_type, ticker_history_id) values {','.join(values_list)}")
+        execute_update(connection,f"insert ignore into alerts_indicatoralert (indicator_id,alert_type, ticker_history_id) values {','.join(values_list)}",auto_commit=True, verbose=False, cache=False)
     #iterate back through, but this time we only fire the ignore functions, which should simply load the alerts for the period from the DB and then
     # ignore any alerts based upon other alerts
     #todo run ignores
@@ -164,13 +165,13 @@ def get_indicator_inventory():
             InventoryFunctionTypes.IGNORE: ignore_death_cross_alert,
             InventoryFunctionTypes.USE_N1_BARS: False
         },
-        Indicator.PROFITABLE_LINE: {
-            InventoryFunctionTypes.LOAD: load_profitable_lines,
-            InventoryFunctionTypes.DID_ALERT: did_profitable_lines_alert,
-            InventoryFunctionTypes.DETERMINE_ALERT_TYPE: determine_profitable_lines_alert_type,
-            InventoryFunctionTypes.IGNORE: ignore_profitable_lines_alert,
-            InventoryFunctionTypes.USE_N1_BARS: False
-        },
+        # Indicator.PROFITABLE_LINE: {
+        #     InventoryFunctionTypes.LOAD: load_profitable_lines,
+        #     InventoryFunctionTypes.DID_ALERT: did_profitable_lines_alert,
+        #     InventoryFunctionTypes.DETERMINE_ALERT_TYPE: determine_profitable_lines_alert_type,
+        #     InventoryFunctionTypes.IGNORE: ignore_profitable_lines_alert,
+        #     InventoryFunctionTypes.USE_N1_BARS: False
+        # },
         Indicator.SUPPORT_RESISTANCE: {
             InventoryFunctionTypes.LOAD: load_support_resistance,
             InventoryFunctionTypes.DID_ALERT: did_support_resistance_alert,
@@ -190,7 +191,7 @@ def get_indicator_inventory():
             InventoryFunctionTypes.LOAD: load_breakout,
             InventoryFunctionTypes.DID_ALERT: did_breakout_alert,
             InventoryFunctionTypes.DETERMINE_ALERT_TYPE: determine_breakout_alert_type,
-            InventoryFunctionTypes.IGNORE: ignore_breakout_reversal_alert,
+            InventoryFunctionTypes.IGNORE: ignore_breakout_alert,
             InventoryFunctionTypes.USE_N1_BARS: False
         },
         Indicator.VIX_RSI: {
@@ -206,6 +207,13 @@ def get_indicator_inventory():
             InventoryFunctionTypes.DETERMINE_ALERT_TYPE: determine_stochastic_rsi_alert_type,
             InventoryFunctionTypes.IGNORE: ignore_stochastic_rsi_alert,
             InventoryFunctionTypes.USE_N1_BARS: False
+        },
+        Indicator.BREAKOUT_PREDICT: {
+            InventoryFunctionTypes.LOAD: load_breakout_predict,
+            InventoryFunctionTypes.DID_ALERT: did_breakout_predict_alert,
+            InventoryFunctionTypes.DETERMINE_ALERT_TYPE: determine_breakout_predict_alert_type,
+            InventoryFunctionTypes.IGNORE: ignore_breakout_predict_rsi_alert,
+            InventoryFunctionTypes.USE_N1_BARS: False
         }
 
 
@@ -213,7 +221,9 @@ def get_indicator_inventory():
 
 
 # def ignore_breakout_reversal_alert(connection, alert_direction, ticker, ticker_history, module_config):
-def ignore_breakout_reversal_alert(connection, alert_direction, ticker, ticker_history, module_config):
+def ignore_breakout_predict_rsi_alert(connection, alert_direction, ticker, ticker_history, module_config):
+    pass
+def ignore_breakout_alert(connection, alert_direction, ticker, ticker_history, module_config):
     pass
 def ignore_adx_reversal_alert(connection, alert_direction, ticker, ticker_history, module_config):
     pass
@@ -267,6 +277,36 @@ def ignore_dmi_alert(connection, alert_direction, ticker, ticker_history, module
     pass
 # def ignore_macd(ticker,ticker_history, module_config):
 # def ignore_sma(ticker,ticker_history, module_config):
+def load_breakout_predict(ticker,ticker_history, module_config, connection=None):
+    df = convert_ticker_history_to_data_frame(ticker, ticker_history)
+    high = df.loc[:, df.columns.get_level_values(1).isin(['high'])].droplevel(1, axis='columns')
+    low = df.loc[:, df.columns.get_level_values(1).isin(['low'])].droplevel(1, axis='columns')
+    close = df.loc[:, df.columns.get_level_values(1).isin(['close'])].droplevel(1, axis='columns')
+    #
+    upper = high * (1 + 4 * (high - low) / (high + low))
+    lower = low * (1 - 4 * (high - low) / (high + low))
+    upper_band = upper.rolling(20).mean()
+    lower_band = lower.rolling(20).mean()
+    sma20 = close.rolling(20).mean()
+    #
+    less_0day_1day = close - close.shift(1)
+    xo = (
+        (close > close.shift(1))
+        & ((less_0day_1day + close) > upper_band)
+        & (close > sma20)
+    )
+    xu = (
+        (close < close.shift(1))
+        & ((close - less_0day_1day) < lower_band)
+        & (close < sma20)
+    )
+    # find out if previous day was successful
+    calls_hit = xo.shift(1) & (high > close.shift(1))
+    puts_hit = xu.shift(1) & (low < close.shift(1))
+    return pd.concat([xo,xu,calls_hit,puts_hit], axis=1, keys=['xo','xu','calls_hit','puts_hit']).swaplevel(axis=1)
+    # symbols = df.columns.get_level_values(0).unique().sort_values(ascending=True)
+    # # now = datetime.datetime.now()
+    # return  ticker in symbols
 def load_macd(ticker,ticker_history, module_config, connection=None):
     df = wrap(load_ticker_history_pd_frame(ticker, ticker_history))
     return {'macd':df['macd'],'signal':df['macds'], 'histogram': df['macdh']}
@@ -486,6 +526,27 @@ def did_golden_cross_alert(indicator_data,ticker,ticker_history, module_config,c
         print(f"Checking Golden Cross Alert, Comparing Value at {datetime.datetime.fromtimestamp(ticker_history[-1].timestamp / 1e3, tz=ZoneInfo('US/Eastern'))}:Long SMA {indicator_data['sma_long'][ticker_history[-1].timestamp]} Short SMA: {indicator_data['sma_short'][ticker_history[-1].timestamp]}: to value at {datetime.datetime.fromtimestamp(ticker_history[-2].timestamp / 1e3, tz=ZoneInfo('US/Eastern'))}:Long SMA {indicator_data['sma_long'][ticker_history[-2].timestamp]} Short SMA: {indicator_data['sma_short'][ticker_history[-2].timestamp]}:")
     return indicator_data['sma_short'][ticker_history[-1].timestamp] > indicator_data['sma_long'][ticker_history[-1].timestamp] and indicator_data['sma_short'][ticker_history[-2].timestamp] < indicator_data['sma_long'][ticker_history[-2].timestamp]
 
+def did_breakout_predict_alert(indicator_data, ticker, ticker_history, module_config,connection=None):
+    symbols = indicator_data.columns.get_level_values(0).unique().sort_values(ascending=True)
+    if ticker not in symbols:
+        return  False
+    for symbol in symbols:
+        if indicator_data[symbol].tail(1)['xo'].bool() or indicator_data[symbol].tail(1)['xu'].bool():
+            return True
+        else:
+            return False
+
+    # return ticker in symbols
+    # now = datetime.datetime.now()
+    # today = now.strftime('%Y-%m-%d')
+    # picks = []
+    # if ticker in symbols:
+    #     return True
+    # if df[ticker].tail(1)['xo'].bool():
+    #     contract_type = 'call'
+    #     cross = 'xo'
+    # elif df[ticker].tail(1)['xu'].bool():
+    #     pass
 def did_death_cross_alert(indicator_data, ticker, ticker_history, module_config,connection=None):
     if module_config['logging']:
         print(
@@ -519,9 +580,9 @@ def did_adx_alert(dmi_data,ticker,ticker_data,module_config,connection=None):
     :return:
     '''
 
-    valid_dmi = (dmi_data['dmi+'][ticker_data[-1].timestamp] > dmi_data['dmi-'][ticker_data[-1].timestamp] and dmi_data['dmi+'][ticker_data[-1].timestamp] > module_config['adx_threshold'] and dmi_data['adx'][ticker_data[-1].timestamp] > module_config['adx_threshold'] and dmi_data['adx'][ticker_data[-1].timestamp] > dmi_data['adx'][ticker_data[-2].timestamp]) or \
-                (dmi_data['dmi+'][ticker_data[-1].timestamp] < dmi_data['dmi-'][ticker_data[-1].timestamp] and dmi_data['dmi-'][ticker_data[-1].timestamp] > module_config['adx_threshold'] and dmi_data['adx'][ticker_data[-1].timestamp] > module_config['adx_threshold'] and dmi_data['adx'][ticker_data[-1].timestamp] > dmi_data['adx'][ticker_data[-2].timestamp])
-    if valid_dmi and dmi_data['adx'][ticker_data[-1].timestamp] > module_config['adx_threshold'] and dmi_data['adx'][ticker_data[-1].timestamp] > dmi_data['adx'][ticker_data[-2].timestamp]:
+    valid_dmi = (dmi_data['dmi+'][ticker_data[-1].timestamp] > dmi_data['dmi-'][ticker_data[-1].timestamp] and dmi_data['dmi+'][ticker_data[-1].timestamp] > module_config['indicator_configs'][Indicator.ADX]['adx_threshold'] and dmi_data['adx'][ticker_data[-1].timestamp] > module_config['indicator_configs'][Indicator.ADX]['adx_threshold'] and dmi_data['adx'][ticker_data[-1].timestamp] > dmi_data['adx'][ticker_data[-2].timestamp]) or \
+                (dmi_data['dmi+'][ticker_data[-1].timestamp] < dmi_data['dmi-'][ticker_data[-1].timestamp] and dmi_data['dmi-'][ticker_data[-1].timestamp] > module_config['indicator_configs'][Indicator.ADX]['adx_threshold'] and dmi_data['adx'][ticker_data[-1].timestamp] > module_config['indicator_configs'][Indicator.ADX]['adx_threshold'] and dmi_data['adx'][ticker_data[-1].timestamp] > dmi_data['adx'][ticker_data[-2].timestamp])
+    if valid_dmi and dmi_data['adx'][ticker_data[-1].timestamp] > module_config['indicator_configs'][Indicator.ADX]['adx_threshold'] and dmi_data['adx'][ticker_data[-1].timestamp] > dmi_data['adx'][ticker_data[-2].timestamp]:
         if module_config['logging']:
             print(f"{datetime.datetime.fromtimestamp(ticker_data[-1].timestamp / 1e3, tz=ZoneInfo('US/Eastern'))}:{ticker}:: ADX Alert Triggered  ADX Value: {dmi_data['adx'][ticker_data[-1].timestamp]} adx-1 Value: {dmi_data['adx'][ticker_data[-2].timestamp]} ")
         return True
@@ -835,6 +896,14 @@ def determine_sr_direction(indicator_data,ticker,ticker_history, module_config,c
         else:
             # return AlertType.SUPPORT_RESISTANCE_BREAKOUT_DOWN+f"==>${round(distance_to_points[0]+ticker_history[-1].close,2)} (${round(distance_to_points[0],2)}/{round(float(distance_to_points[0] / ticker_history[-1].close)*100,2)}%)"
             return AlertType.SUPPORT_RESISTANCE_BREAKOUT_DOWN#+f"==>${round(distance_to_points[0]+ticker_history[-1].close,2)} (${round(distance_to_points[0],2)}/{round(float(distance_to_points[0] / ticker_history[-1].close)*100,2)}%)"
+def determine_breakout_predict_alert_type(indicator_data,ticker,ticker_history, module_config,connection=None):
+    for symbol in indicator_data.columns.get_level_values(0).unique().sort_values(ascending=True):
+        if indicator_data[symbol].tail(1)['xo'].bool():
+            return AlertType.BREAKOUT_PREDICT_CROSSOVER_BULLISH
+        elif indicator_data[symbol].tail(1)['xu'].bool():
+            return  AlertType.BREAKOUT_CROSSOVER_BEARISH
+        else:
+            raise Exception(f"Cannot determine breakout predict alert type")
 def determine_golden_cross_alert_type(indicator_data,ticker,ticker_history, module_config,connection=None):
     if did_golden_cross_alert(indicator_data,ticker,ticker_history,module_config):
         return AlertType.GOLDEN_CROSS_APPEARED
