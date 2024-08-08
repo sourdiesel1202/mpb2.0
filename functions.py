@@ -26,6 +26,7 @@ def load_module_config(module):
         module_config['indicator_configs'] = {}
         for k, v in json.loads(f.read()).items():
             module_config['indicator_configs'][k]=v
+    print(json.dumps(module_config))
     return  module_config
 def write_csv(filename, rows):
     with open(filename  , 'w', newline='') as f:

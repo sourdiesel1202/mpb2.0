@@ -70,6 +70,7 @@ def process_ticker_alerts(connection, ticker, ticker_history, module_config):
     indicator_inventory = get_indicator_inventory()
     values_list = []
     for indicator, function_dict in indicator_inventory.items():
+        print(f"PRocessing indicator: {indicator}")
         if function_dict[InventoryFunctionTypes.USE_N1_BARS]:
             ticker_history = _th[:-1]
         else:
@@ -210,17 +211,45 @@ def get_indicator_inventory():
         },
         Indicator.BREAKOUT_PREDICT: {
             InventoryFunctionTypes.LOAD: load_breakout_predict,
-            InventoryFunctionTypes.DID_ALERT: did_breakout_predict_alert,
+            InventoryFunctionTypes.DID_ALERT: did_dataframe_indicator_alert,
             InventoryFunctionTypes.DETERMINE_ALERT_TYPE: determine_breakout_predict_alert_type,
             InventoryFunctionTypes.IGNORE: ignore_breakout_predict_rsi_alert,
             InventoryFunctionTypes.USE_N1_BARS: False
+        },
+        Indicator.BREAKOUT_LONGTERM: {
+            InventoryFunctionTypes.LOAD: load_breakout_longterm,
+            InventoryFunctionTypes.DID_ALERT: did_dataframe_indicator_alert,
+            InventoryFunctionTypes.DETERMINE_ALERT_TYPE: determine_breakout_longterm_alert_type,
+            InventoryFunctionTypes.IGNORE: ignore_breakout_longterm_alert,
+            InventoryFunctionTypes.USE_N1_BARS: False
+        },
+        Indicator.ADX_CROSSOVER: {
+            InventoryFunctionTypes.LOAD: load_adx_crossover,
+            InventoryFunctionTypes.DID_ALERT: did_dataframe_indicator_alert,
+            InventoryFunctionTypes.DETERMINE_ALERT_TYPE: determine_adx_crossover_alert_type,
+            InventoryFunctionTypes.IGNORE: ignore_adx_crossover_alert,
+            InventoryFunctionTypes.USE_N1_BARS: False
+        },
+        Indicator.CURRENT_BREAKOUT: {
+            InventoryFunctionTypes.LOAD: load_current_breakout,
+            InventoryFunctionTypes.DID_ALERT: did_dataframe_indicator_alert,
+            InventoryFunctionTypes.DETERMINE_ALERT_TYPE: determine_current_breakout_alert_type,
+            InventoryFunctionTypes.IGNORE: ignore_current_breakout_alert,
+            InventoryFunctionTypes.USE_N1_BARS: False
         }
+
 
 
     }
 
 
 # def ignore_breakout_reversal_alert(connection, alert_direction, ticker, ticker_history, module_config):
+def ignore_current_breakout_alert(connection, alert_direction, ticker, ticker_history, module_config):
+    pass
+def ignore_adx_crossover_alert(connection, alert_direction, ticker, ticker_history, module_config):
+    pass
+def ignore_breakout_longterm_alert(connection, alert_direction, ticker, ticker_history, module_config):
+    pass
 def ignore_breakout_predict_rsi_alert(connection, alert_direction, ticker, ticker_history, module_config):
     pass
 def ignore_breakout_alert(connection, alert_direction, ticker, ticker_history, module_config):
@@ -277,6 +306,93 @@ def ignore_dmi_alert(connection, alert_direction, ticker, ticker_history, module
     pass
 # def ignore_macd(ticker,ticker_history, module_config):
 # def ignore_sma(ticker,ticker_history, module_config):
+def load_adx_crossover(ticker,ticker_history, module_config, connection=None):
+    df = convert_ticker_history_to_data_frame(ticker, ticker_history)
+    symbols = df.columns.get_level_values(0).unique().sort_values(ascending=True)
+    adx = pd.DataFrame()
+    for symbol in symbols:
+        adx_single = df[symbol].ta.adx()
+        adx_single['Ticker'] = symbol
+        adx_single = adx_single.set_index('Ticker', append=True).unstack('Ticker').swaplevel(axis=1)
+        adx = pd.concat([adx, adx_single], axis=1)
+    #adx = df.ta.adx()
+
+    close = df.loc[:, df.columns.get_level_values(1).isin(['Close'])].droplevel(1, axis='columns')
+    high = df.loc[:, df.columns.get_level_values(1).isin(['High'])].droplevel(1, axis='columns')
+    low = df.loc[:, df.columns.get_level_values(1).isin(['Low'])].droplevel(1, axis='columns')
+    adx_14 = adx.loc[:, adx.columns.get_level_values(1).isin(['ADX_14'])].droplevel(1, axis='columns')
+    dmp_14 = adx.loc[:, adx.columns.get_level_values(1).isin(['DMP_14'])].droplevel(1, axis='columns')
+    dmn_14 = adx.loc[:, adx.columns.get_level_values(1).isin(['DMN_14'])].droplevel(1, axis='columns')
+
+    lt_adx_20 = adx_14 < 20
+    gt_0day_1day = adx_14 > adx_14.shift(1)
+    gt_1day_2day = adx_14.shift(1) > adx_14.shift(2)
+    less_0day_1day = adx_14 - adx_14.shift(1)
+    plus_0day_diff = adx_14 + less_0day_1day
+    gt_plus_20 = plus_0day_diff > 20
+    gt_dmp_dmn = dmp_14 > dmn_14
+    gt_dmn_dmp = dmn_14 > dmp_14
+
+    xo = (
+        # ADX is less than 20
+        lt_adx_20 &
+        # upward trend of ADX
+        gt_0day_1day &
+        # stronger uptrend!
+        gt_1day_2day &
+        # today plus difference between today and yesterday, is above 20
+        gt_plus_20 &
+        # DMP is stronger than DMN
+        gt_dmp_dmn
+    )
+    xu = (
+        # ADX is less than 20
+        lt_adx_20 &
+        # upward trend of ADX
+        gt_0day_1day &
+        # stronger uptrend!
+        gt_1day_2day &
+        # today plus difference between today and yesterday, is above 20
+        gt_plus_20 &
+        # DMN is stronger than DMP
+        gt_dmn_dmp
+    )
+
+    calls_hit = xo.shift(1) & (close.shift(1) < high)
+    puts_hit = xu.shift(1) & (close.shift(1) > low)
+    df = pd.concat([xo,xu,calls_hit,puts_hit], axis=1, keys=['xo','xu','calls_hit','puts_hit']).swaplevel(axis=1)
+    return df
+def load_breakout_longterm(ticker,ticker_history, module_config, connection=None):
+    df = convert_ticker_history_to_data_frame(ticker, ticker_history)
+    high = df.loc[:, df.columns.get_level_values(1).isin(['high'])].droplevel(1, axis='columns')
+    low = df.loc[:, df.columns.get_level_values(1).isin(['low'])].droplevel(1, axis='columns')
+    close = df.loc[:, df.columns.get_level_values(1).isin(['close'])].droplevel(1, axis='columns')
+    #
+    upper = high * (1 + 4 * (high - low) / (high + low))
+    lower = low * (1 - 4 * (high - low) / (high + low))
+    upper_band = upper.rolling(module_config['indicator_configs'][Indicator.BREAKOUT_LONGTERM]['sma_window']).mean()
+    lower_band = lower.rolling(module_config['indicator_configs'][Indicator.BREAKOUT_LONGTERM]['sma_window']).mean()
+    sma20 = close.rolling(module_config['indicator_configs'][Indicator.BREAKOUT_LONGTERM]['sma_window']).mean()
+    #
+    xo = (
+        (close > upper_band)
+        & (close.shift(1) > upper_band.shift(1))
+        & (close.shift(2) < upper_band.shift(2))
+        & (close > sma20)
+    )
+    xu = (
+        (close < lower_band)
+        & (close.shift(1) < lower_band.shift(1))
+        & (close.shift(2) > lower_band.shift(2))
+        & (close < sma20)
+    )
+    # find out if previous day was successful
+    # shift should be rolling 5 day window, but will not execute in 5 days
+    # it would be best to find out all XO/XU in the previous 5 days and check rolling 5 max
+    calls_hit = xo.shift(5) & (high.rolling(5).max() > close.shift(5))
+    puts_hit = xu.shift(5) & (low.rolling(5).min() < close.shift(5))
+    df = pd.concat([xo,xu,calls_hit,puts_hit], axis=1, keys=['xo','xu','calls_hit','puts_hit']).swaplevel(axis=1)
+    return df
 def load_breakout_predict(ticker,ticker_history, module_config, connection=None):
     df = convert_ticker_history_to_data_frame(ticker, ticker_history)
     high = df.loc[:, df.columns.get_level_values(1).isin(['high'])].droplevel(1, axis='columns')
@@ -285,9 +401,9 @@ def load_breakout_predict(ticker,ticker_history, module_config, connection=None)
     #
     upper = high * (1 + 4 * (high - low) / (high + low))
     lower = low * (1 - 4 * (high - low) / (high + low))
-    upper_band = upper.rolling(20).mean()
-    lower_band = lower.rolling(20).mean()
-    sma20 = close.rolling(20).mean()
+    upper_band = upper.rolling(module_config['indicator_configs'][Indicator.BREAKOUT_PREDICT]['sma_window']).mean()
+    lower_band = lower.rolling(module_config['indicator_configs'][Indicator.BREAKOUT_PREDICT]['sma_window']).mean()
+    sma20 = close.rolling(module_config['indicator_configs'][Indicator.BREAKOUT_PREDICT]['sma_window']).mean()
     #
     less_0day_1day = close - close.shift(1)
     xo = (
@@ -360,6 +476,33 @@ def load_vix_rsi(ticker, ticker_history, module_config,connection=None):
     return load_rsi(module_config['indicator_configs'][Indicator.VIX_RSI]['vix_source'], load_ticker_history_db(module_config['indicator_configs'][Indicator.VIX_RSI]['vix_source'], module_config,connection=connection), module_config)
 
 
+def load_current_breakout(ticker, ticker_history, module_config,connection=None):
+    df = convert_ticker_history_to_data_frame(ticker, ticker_history)
+    high = df.loc[:, df.columns.get_level_values(1).isin(['high'])].droplevel(1, axis='columns')
+    low = df.loc[:, df.columns.get_level_values(1).isin(['low'])].droplevel(1, axis='columns')
+    close = df.loc[:, df.columns.get_level_values(1).isin(['close'])].droplevel(1, axis='columns')
+    #
+    upper = high * (1 + 4 * (high - low) / (high + low))
+    lower = low * (1 - 4 * (high - low) / (high + low))
+    upper_band = upper.rolling(20).mean()
+    lower_band = lower.rolling(20).mean()
+    sma20 = close.rolling(20).mean()
+    #
+    xo = (
+        (close > upper_band)
+        #& (close.shift(1) > upper_band.shift(1))
+        & (close > sma20)
+    )
+    xu = (
+        (close < lower_band)
+        #& (close.shift(1) < lower_band.shift(1))
+        & (close < sma20)
+    )
+    # find out if previous day was successful
+    calls_hit = xo.shift(1) & (high > close.shift(1))
+    puts_hit = xu.shift(1) & (low < close.shift(1))
+    df = pd.concat([xo,xu,calls_hit,puts_hit], axis=1, keys=['xo','xu','calls_hit','puts_hit']).swaplevel(axis=1)
+    return df
 def load_breakout(ticker, ticker_history, module_config,connection=None):
     df = wrap(load_ticker_history_pd_frame(ticker, ticker_history))
 
@@ -526,7 +669,10 @@ def did_golden_cross_alert(indicator_data,ticker,ticker_history, module_config,c
         print(f"Checking Golden Cross Alert, Comparing Value at {datetime.datetime.fromtimestamp(ticker_history[-1].timestamp / 1e3, tz=ZoneInfo('US/Eastern'))}:Long SMA {indicator_data['sma_long'][ticker_history[-1].timestamp]} Short SMA: {indicator_data['sma_short'][ticker_history[-1].timestamp]}: to value at {datetime.datetime.fromtimestamp(ticker_history[-2].timestamp / 1e3, tz=ZoneInfo('US/Eastern'))}:Long SMA {indicator_data['sma_long'][ticker_history[-2].timestamp]} Short SMA: {indicator_data['sma_short'][ticker_history[-2].timestamp]}:")
     return indicator_data['sma_short'][ticker_history[-1].timestamp] > indicator_data['sma_long'][ticker_history[-1].timestamp] and indicator_data['sma_short'][ticker_history[-2].timestamp] < indicator_data['sma_long'][ticker_history[-2].timestamp]
 
-def did_breakout_predict_alert(indicator_data, ticker, ticker_history, module_config,connection=None):
+# def did_current_breakout_alert(indicator_data, ticker, ticker_history, module_config,connection=None):
+def did_breakout_longterm_alert(indicator_data, ticker, ticker_history, module_config,connection=None):
+    pass
+def did_dataframe_indicator_alert(indicator_data, ticker, ticker_history, module_config,connection=None):
     symbols = indicator_data.columns.get_level_values(0).unique().sort_values(ascending=True)
     if ticker not in symbols:
         return  False
@@ -896,12 +1042,39 @@ def determine_sr_direction(indicator_data,ticker,ticker_history, module_config,c
         else:
             # return AlertType.SUPPORT_RESISTANCE_BREAKOUT_DOWN+f"==>${round(distance_to_points[0]+ticker_history[-1].close,2)} (${round(distance_to_points[0],2)}/{round(float(distance_to_points[0] / ticker_history[-1].close)*100,2)}%)"
             return AlertType.SUPPORT_RESISTANCE_BREAKOUT_DOWN#+f"==>${round(distance_to_points[0]+ticker_history[-1].close,2)} (${round(distance_to_points[0],2)}/{round(float(distance_to_points[0] / ticker_history[-1].close)*100,2)}%)"
+def determine_current_breakout_alert_type(indicator_data,ticker,ticker_history, module_config,connection=None):
+    for symbol in indicator_data.columns.get_level_values(0).unique().sort_values(ascending=True):
+        if indicator_data[symbol].tail(1)['xo'].bool():
+            return AlertType.CURRENT_BREAKOUT_CROSSOVER_BULLISH
+        elif indicator_data[symbol].tail(1)['xu'].bool():
+            return  AlertType.CURRENT_BREAKOUT_CROSSOVER_BULLISH
+        else :
+            traceback.print_exc()
+            raise Exception(f"Cannot determine current breakout alert type for {ticker}")
+def determine_breakout_longterm_alert_type(indicator_data,ticker,ticker_history, module_config,connection=None):
+    for symbol in indicator_data.columns.get_level_values(0).unique().sort_values(ascending=True):
+        if indicator_data[symbol].tail(1)['xo'].bool():
+            return AlertType.BREAKOUT_LONGTERM_CROSSOVER_BULLISH
+        elif indicator_data[symbol].tail(1)['xu'].bool():
+            return  AlertType.BREAKOUT_LONGTERM_CROSSOVER_BEARISH
+        else :
+            traceback.print_exc()
+            raise Exception(f"Cannot determine  breakout longterm alert type for {ticker}")
+def determine_adx_crossover_alert_type(indicator_data,ticker,ticker_history, module_config,connection=None):
+    for symbol in indicator_data.columns.get_level_values(0).unique().sort_values(ascending=True):
+        if indicator_data[symbol].tail(1)['xo'].bool():
+            return AlertType.ADX_CROSSOVER_BULLISH
+        elif indicator_data[symbol].tail(1)['xu'].bool():
+            return  AlertType.ADX_CROSSOVER_BEARISH
+        else :
+            traceback.print_exc()
+            raise Exception(f"Cannot determine modified breakout alert type for {ticker}")
 def determine_breakout_predict_alert_type(indicator_data,ticker,ticker_history, module_config,connection=None):
     for symbol in indicator_data.columns.get_level_values(0).unique().sort_values(ascending=True):
         if indicator_data[symbol].tail(1)['xo'].bool():
             return AlertType.BREAKOUT_PREDICT_CROSSOVER_BULLISH
         elif indicator_data[symbol].tail(1)['xu'].bool():
-            return  AlertType.BREAKOUT_CROSSOVER_BEARISH
+            return  AlertType.BREAKOUT_PREDICT_CROSSOVER_BEARISH
         else:
             raise Exception(f"Cannot determine breakout predict alert type")
 def determine_golden_cross_alert_type(indicator_data,ticker,ticker_history, module_config,connection=None):

@@ -4,7 +4,8 @@ from history import load_ticker_history_pd_frame
 from strategy import IronCondor, Strategy, LongCall, LongPut
 from stockstats import wrap
 from indicators import load_rsi, get_indicator_inventory, load_macd, load_sma, load_dmi_adx, load_breakout, \
-    load_death_cross, load_golden_cross, load_support_resistance, load_vix_rsi, load_stochastic_rsi
+    load_death_cross, load_golden_cross, load_support_resistance, load_vix_rsi, load_stochastic_rsi, \
+    load_breakout_predict, load_breakout_longterm, load_adx_crossover, load_current_breakout
 
 
 def perform_backtest(ticker, ticker_history, strategy_type, module_config, connection=None):
@@ -146,6 +147,14 @@ def load_indicator_data(ticker, ticker_history, module_config, connection):
             indicator_dict[indicator]=load_stochastic_rsi(ticker, ticker_history, module_config, connection=connection)
         if indicator in  [Indicator.ADX, Indicator.DMI, Indicator.ADX_REVERSAL]:
             indicator_dict[indicator]=load_dmi_adx(ticker, ticker_history, module_config)
+        if indicator == Indicator.BREAKOUT_PREDICT:
+            indicator_dict[indicator]=load_breakout_predict(ticker, ticker_history, module_config)
+        if indicator == Indicator.BREAKOUT_LONGTERM:
+            indicator_dict[indicator]=load_breakout_longterm(ticker, ticker_history, module_config)
+        if indicator == Indicator.ADX_CROSSOVER:
+            indicator_dict[indicator]=load_adx_crossover(ticker, ticker_history, module_config)
+        if indicator == Indicator.CURRENT_BREAKOUT:
+            indicator_dict[indicator]=load_current_breakout(ticker, ticker_history, module_config)
 
 
 

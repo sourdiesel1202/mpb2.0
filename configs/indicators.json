@@ -4,54 +4,63 @@
     "rsi_oversold_threshold": 30,
     "inverse": true,
     "require_alert_type": true,
-    "alert_type": "RSI_OVERSOLD"
+    "alert_type": "RSI_OVERSOLD",
+    "include_in_dashboard": false
   },
   "MACD": {
     "inverse": false,
     "require_alert_type": true,
-    "alert_type": "MACD_SIGNAL_CROSS_MACD"
+    "alert_type": "MACD_SIGNAL_CROSS_MACD",
+    "include_in_dashboard": false
   },
   "ADX": {
     "adx_threshold": 20,
     "inverse": false,
     "require_alert_type": true,
-    "alert_type": "MACD_SIGNAL_CROSS_MACD"
+    "alert_type": "MACD_SIGNAL_CROSS_MACD",
+    "include_in_dashboard": false
   },
   "SMA": {
     "alert_type": "SMA_CONFIRMATION_UPWARD",
     "inverse": true,
     "require_alert_type": true,
-    "sma_window": 200
+    "sma_window": 200,
+    "include_in_dashboard": false
   },
   "ADX_REVERSAL": {
     "inverse": false,
     "require_alert_type": true,
     "alert_type": "ADX_REVERSAL_BEARISH",
-    "adx_reversal_threshold": 10
+    "adx_reversal_threshold": 10,
+    "include_in_dashboard": false
   },
   "DMI": {
     "inverse": false,
     "require_alert_type": true,
-    "alert_type": "DMINEG_CROSSOVER_DMIPLUS"
+    "alert_type": "DMINEG_CROSSOVER_DMIPLUS",
+    "include_in_dashboard": false
   },
   "DEATH_CROSS": {
     "inverse": false,
     "require_alert_type": true,
     "alert_type": "DEATH_CROSS_APPEARED",
     "dc_long_sma_window": 200,
-    "dc_short_sma_window": 50
+    "dc_short_sma_window": 50,
+    "include_in_dashboard": false
   },
   "GOLDEN_CROSS": {
     "inverse": false,
     "require_alert_type": true,
     "alert_type": "GOLDEN_CROSS_APPEARED",
     "gc_long_sma_window": 200,
-    "gc_short_sma_window": 50
+    "gc_short_sma_window": 50,
+    "include_in_dashboard": false
   },
   "BREAKOUT": {
     "inverse": false,
     "require_alert_type": true,
-    "alert_type": "BREAKOUT_CROSSOVER_BULLISH"
+    "alert_type": "BREAKOUT_CROSSOVER_BULLISH",
+    "include_in_dashboard": false
   },
   "VIX_RSI": {
     "inverse": false,
@@ -59,26 +68,60 @@
     "alert_type": "VIX_RSI_OVERBOUGHT",
     "vix_source": "VIXY",
     "rsi_overbought_threshold": 65,
-    "rsi_oversold_threshold": 40
+    "rsi_oversold_threshold": 40,
+    "include_in_dashboard": false
   },
   "STOCHASTIC_RSI": {
     "inverse": false,
     "require_alert_type": true,
     "alert_type": "STOCHASTIC_RSI_OVERSOLD",
     "rsi_overbought_threshold": 90,
-    "rsi_oversold_threshold": 5
+    "rsi_oversold_threshold": 5,
+    "include_in_dashboard": false
   },
   "VIX_SMA": {
     "inverse": false,
     "require_alert_type": false,
     "alert_type": "BREAKOUT_CROSSOVER_BULLISH",
-    "vix_source": "VIXY"
+    "vix_source": "VIXY",
+    "include_in_dashboard": false
+  },
+  "BREAKOUT_PREDICT": {
+    "inverse": false,
+    "require_alert_type": false,
+    "alert_type": "BREAKOUT_PREDICT_CROSSOVER_BULLISH",
+    "sma_window": 20,
+    "include_in_dashboard": true
+
+  },
+  "BREAKOUT_LONGTERM": {
+    "inverse": false,
+    "require_alert_type": false,
+    "alert_type": "BREAKOUT_LONGTERM",
+    "sma_window": 20,
+    "include_in_dashboard": true
+
   },
   "SUPPORT_RESISTANCE": {
     "inverse": false,
     "require_alert_type": true,
     "alert_type": "SUPPORT_RESISTANCE_CONSOLIDATON",
     "sr_lookback": 700,
-    "sr_breakout_percentage": 1.01
+    "sr_breakout_percentage": 1.01,
+    "include_in_dashboard": false
+  },
+  "ADX_CROSSOVER": {
+    "inverse": false,
+    "require_alert_type": true,
+    "alert_type": "ADX_CROSSOVER_BULLISH",
+    "include_in_dashboard": true
+  },
+  "CURRENT_BREAKOUT": {
+    "inverse": false,
+    "require_alert_type": true,
+    "alert_type": "CURRENT_BREAKOUT_CROSSOVER_BULLISH",
+    "include_in_dashboard": true
   }
+
+
 }

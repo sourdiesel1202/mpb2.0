@@ -1,4 +1,5 @@
 import datetime
+import json
 import time
 import traceback
 from history import TickerHistory
@@ -15,7 +16,7 @@ def download_raw_yahoo_data(ticker,module_config):
     timestamp = str(time.time()).split('.')[0]
     # print(f"curl -o data/yahoo/{ticker}.csv https://query1.finance.yahoo.com/v7/finance/download/SPY?period1=1185148800&period2=1724284800&interval=1d&events=history&includeAdjustedClose=true")
     # print(f"wget https://query1.finance.yahoo.com/v7/finance/download/{ticker}?period1=774921600&period2={datetime.datetime.now().timestamp}&interval=1d&events=history&includeAdjustedClose=true -P data/yahoo")
-    url = f"curl -o data/yahoo/{ticker}.csv https://query1.finance.yahoo.com/v7/finance/download/{ticker}?period2={timestamp}&period1=1185148800&interval=1d&events=history&includeAdjustedClose=true"
+    url = f"curl -o data/yahoo/{ticker}.csv https://query1.finance.yahoo.com/v7/finance/download/{ticker}?period2={timestamp}&period1=774921600&interval=1d&events=history&includeAdjustedClose=true"
     print(url)
     os.system(url)
     time.sleep(2) #wait for download
@@ -39,9 +40,14 @@ if __name__ == '__main__':
     connection = obtain_db_connection(module_config)
 
     try:
-        tickers = module_config['tickers']
+        tickers = read_csv('data/sp500_tickers.csv')
+        # tickers = module_config['tickers']
+        tickers = [tickers[i][0] for i in range(1, len(tickers))]
+        print(json.dumps(tickers))
         print(f"Loading Ticker Data for {len(tickers)} tickers")
-        for ticker in tickers:
+        # for ticker in tickers:
+        for i in range(0, len(tickers)):
+            ticker=tickers[i]
             print(f"Loading data for {ticker}")
             download_raw_yahoo_data(ticker,module_config)
             raw_data = read_csv(f"{module_config['data_dir']}/{ticker}.csv")

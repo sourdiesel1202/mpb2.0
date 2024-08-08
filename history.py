@@ -16,6 +16,7 @@ from zoneinfo import ZoneInfo
 from functions import generate_csv_string, read_csv, write_csv, delete_csv, get_today, timestamp_to_datetime, \
     human_readable_datetime, execute_query, execute_update, obtain_db_connection, process_list_concurrently
 import pandas as pd
+import pandas_ta as ta
 # from indicators import process_ticker_alerts
 # from validation import process_ticker_validation
 # from db_functions import process_ticker_history
