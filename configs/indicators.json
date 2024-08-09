@@ -30,9 +30,14 @@
   "ADX_REVERSAL": {
     "inverse": false,
     "require_alert_type": true,
-    "alert_type": "ADX_REVERSAL_BEARISH",
-    "adx_reversal_threshold": 10,
-    "include_in_dashboard": false
+    "alert_type": "ADX_REVERSAL_BULLISH",
+    "include_in_dashboard": true
+  },
+  "ADX_REVERSAL_ALTERNATIVE": {
+    "inverse": false,
+    "require_alert_type": true,
+    "alert_type": "ADX_REVERSAL_ALTERNATIVE_BULLISH",
+    "include_in_dashboard": true
   },
   "DMI": {
     "inverse": false,
@@ -60,7 +65,7 @@
     "inverse": false,
     "require_alert_type": true,
     "alert_type": "BREAKOUT_CROSSOVER_BULLISH",
-    "include_in_dashboard": false
+    "include_in_dashboard": true
   },
   "VIX_RSI": {
     "inverse": false,
@@ -102,6 +107,14 @@
     "include_in_dashboard": true
 
   },
+  "MOMENTUM_QUICK": {
+    "inverse": false,
+    "require_alert_type": true,
+    "alert_type": "MOMENTUM_QUICK_CROSSOVER_BULLISH",
+    "sma_window": 20,
+    "include_in_dashboard": true
+
+  },
   "SUPPORT_RESISTANCE": {
     "inverse": false,
     "require_alert_type": true,
@@ -121,6 +134,36 @@
     "require_alert_type": true,
     "alert_type": "CURRENT_BREAKOUT_CROSSOVER_BULLISH",
     "include_in_dashboard": true
+  },
+  "EXTREME_RSI": {
+    "inverse": false,
+    "require_alert_type": true,
+    "alert_type": "EXTREME_RSI_OVERSOLD",
+    "include_in_dashboard": true,
+    "length": 13,
+    "rsi_length": 21,
+    "k": 8,
+    "d": 8
+  },
+"EXTREME_RSI_ALTERNATIVE": {
+    "inverse": false,
+    "require_alert_type": true,
+    "alert_type": "EXTREME_RSI_ALTERNATIVE_OVERSOLD",
+    "include_in_dashboard": true,
+    "length": 13,
+    "rsi_length": 21,
+    "k": 8,
+    "d": 8
+  },
+  "RSI_REVERSAL": {
+    "inverse": false,
+    "require_alert_type": true,
+    "alert_type": "RSI_REVERSAL_CROSSOVER_BULLISH",
+    "include_in_dashboard": true,
+    "length": 13,
+    "rsi_length": 21,
+    "k": 8,
+    "d": 8
   }
 
 

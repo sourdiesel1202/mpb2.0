@@ -182,15 +182,21 @@ def get_indicator_inventory():
         },
 
         Indicator.ADX_REVERSAL: {
-            InventoryFunctionTypes.LOAD: load_dmi_adx,
-            InventoryFunctionTypes.DID_ALERT: did_adx_reversal_alert,
+            InventoryFunctionTypes.LOAD: load_adx_reversal,
+            InventoryFunctionTypes.DID_ALERT: did_dataframe_indicator_alert,
             InventoryFunctionTypes.DETERMINE_ALERT_TYPE: determine_adx_reversal_alert_type,
             InventoryFunctionTypes.IGNORE: ignore_adx_reversal_alert,
+            InventoryFunctionTypes.USE_N1_BARS: False
+        },Indicator.ADX_REVERSAL_ALTERNATIVE: {
+            InventoryFunctionTypes.LOAD: load_adx_reversal_alternative,
+            InventoryFunctionTypes.DID_ALERT: did_dataframe_indicator_alert,
+            InventoryFunctionTypes.DETERMINE_ALERT_TYPE: determine_adx_reversal_alternative_alert_type,
+            InventoryFunctionTypes.IGNORE: ignore_adx_reversal_alternative_alert,
             InventoryFunctionTypes.USE_N1_BARS: False
         },
         Indicator.BREAKOUT: {
             InventoryFunctionTypes.LOAD: load_breakout,
-            InventoryFunctionTypes.DID_ALERT: did_breakout_alert,
+            InventoryFunctionTypes.DID_ALERT: did_dataframe_indicator_alert,
             InventoryFunctionTypes.DETERMINE_ALERT_TYPE: determine_breakout_alert_type,
             InventoryFunctionTypes.IGNORE: ignore_breakout_alert,
             InventoryFunctionTypes.USE_N1_BARS: False
@@ -236,6 +242,34 @@ def get_indicator_inventory():
             InventoryFunctionTypes.DETERMINE_ALERT_TYPE: determine_current_breakout_alert_type,
             InventoryFunctionTypes.IGNORE: ignore_current_breakout_alert,
             InventoryFunctionTypes.USE_N1_BARS: False
+        },
+        Indicator.EXTREME_RSI: {
+            InventoryFunctionTypes.LOAD: load_extreme_rsi,
+            InventoryFunctionTypes.DID_ALERT: did_dataframe_indicator_alert,
+            InventoryFunctionTypes.DETERMINE_ALERT_TYPE: determine_extreme_rsi_alert_type,
+            InventoryFunctionTypes.IGNORE: ignore_extreme_rsi_alert,
+            InventoryFunctionTypes.USE_N1_BARS: False
+        },
+        Indicator.RSI_REVERSAL: {
+            InventoryFunctionTypes.LOAD: load_rsi_reversal,
+            InventoryFunctionTypes.DID_ALERT: did_dataframe_indicator_alert,
+            InventoryFunctionTypes.DETERMINE_ALERT_TYPE: determine_rsi_reversal_alert_type,
+            InventoryFunctionTypes.IGNORE: ignore_rsi_reversal_alert,
+            InventoryFunctionTypes.USE_N1_BARS: False
+        },
+        Indicator.MOMENTUM_QUICK: {
+            InventoryFunctionTypes.LOAD: load_momentum_quick,
+            InventoryFunctionTypes.DID_ALERT: did_dataframe_indicator_alert,
+            InventoryFunctionTypes.DETERMINE_ALERT_TYPE: determine_momentum_quick_alert_type,
+            InventoryFunctionTypes.IGNORE: ignore_momentum_quick_alert,
+            InventoryFunctionTypes.USE_N1_BARS: False
+        },
+        Indicator.EXTREME_RSI_ALTERNATIVE: {
+            InventoryFunctionTypes.LOAD: load_extreme_rsi_alternative,
+            InventoryFunctionTypes.DID_ALERT: did_dataframe_indicator_alert,
+            InventoryFunctionTypes.DETERMINE_ALERT_TYPE: determine_extreme_rsi_alternative_alert_type,
+            InventoryFunctionTypes.IGNORE: ignore_extreme_rsi_alternative_alert,
+            InventoryFunctionTypes.USE_N1_BARS: False
         }
 
 
@@ -244,6 +278,16 @@ def get_indicator_inventory():
 
 
 # def ignore_breakout_reversal_alert(connection, alert_direction, ticker, ticker_history, module_config):
+def ignore_adx_reversal_alternative_alert(connection, alert_direction, ticker, ticker_history, module_config):
+    pass
+def ignore_rsi_reversal_alert(connection, alert_direction, ticker, ticker_history, module_config):
+    pass
+def ignore_momentum_quick_alert(connection, alert_direction, ticker, ticker_history, module_config):
+    pass
+def ignore_extreme_rsi_alert(connection, alert_direction, ticker, ticker_history, module_config):
+    pass
+def ignore_extreme_rsi_alternative_alert(connection, alert_direction, ticker, ticker_history, module_config):
+    pass
 def ignore_current_breakout_alert(connection, alert_direction, ticker, ticker_history, module_config):
     pass
 def ignore_adx_crossover_alert(connection, alert_direction, ticker, ticker_history, module_config):
@@ -317,9 +361,9 @@ def load_adx_crossover(ticker,ticker_history, module_config, connection=None):
         adx = pd.concat([adx, adx_single], axis=1)
     #adx = df.ta.adx()
 
-    close = df.loc[:, df.columns.get_level_values(1).isin(['Close'])].droplevel(1, axis='columns')
-    high = df.loc[:, df.columns.get_level_values(1).isin(['High'])].droplevel(1, axis='columns')
-    low = df.loc[:, df.columns.get_level_values(1).isin(['Low'])].droplevel(1, axis='columns')
+    close = df.loc[:, df.columns.get_level_values(1).isin(['close'])].droplevel(1, axis='columns')
+    high = df.loc[:, df.columns.get_level_values(1).isin(['high'])].droplevel(1, axis='columns')
+    low = df.loc[:, df.columns.get_level_values(1).isin(['low'])].droplevel(1, axis='columns')
     adx_14 = adx.loc[:, adx.columns.get_level_values(1).isin(['ADX_14'])].droplevel(1, axis='columns')
     dmp_14 = adx.loc[:, adx.columns.get_level_values(1).isin(['DMP_14'])].droplevel(1, axis='columns')
     dmn_14 = adx.loc[:, adx.columns.get_level_values(1).isin(['DMN_14'])].droplevel(1, axis='columns')
@@ -476,6 +520,219 @@ def load_vix_rsi(ticker, ticker_history, module_config,connection=None):
     return load_rsi(module_config['indicator_configs'][Indicator.VIX_RSI]['vix_source'], load_ticker_history_db(module_config['indicator_configs'][Indicator.VIX_RSI]['vix_source'], module_config,connection=connection), module_config)
 
 
+def load_extreme_rsi_alternative(ticker, ticker_history, module_config,connection=None):
+    df = convert_ticker_history_to_data_frame(ticker, ticker_history)
+    symbols = df.columns.get_level_values(0).unique().sort_values(ascending=True)
+    rsi = pd.DataFrame()
+    rsi_params = {
+        'length': module_config['indicator_configs'][Indicator.EXTREME_RSI_ALTERNATIVE]['length'],
+        'rsi_length': module_config['indicator_configs'][Indicator.EXTREME_RSI_ALTERNATIVE]['rsi_length'],
+        'k': module_config['indicator_configs'][Indicator.EXTREME_RSI_ALTERNATIVE]['k'],
+        'd': module_config['indicator_configs'][Indicator.EXTREME_RSI_ALTERNATIVE]['d'],
+    }
+    rsi_column_name = (
+        f'STOCHRSIk'
+        f'_{rsi_params["length"]}'
+        f'_{rsi_params["rsi_length"]}'
+        f'_{rsi_params["k"]}'
+        f'_{rsi_params["d"]}'
+    )
+
+    for symbol in symbols:
+        rsi_single = df[symbol].ta.stochrsi(**rsi_params)
+        rsi_single['Ticker'] = symbol
+        rsi_single = rsi_single.set_index('Ticker', append=True).unstack('Ticker').swaplevel(axis=1)
+        rsi = pd.concat([rsi, rsi_single], axis=1)
+
+    close = df.loc[:, df.columns.get_level_values(1).isin(['close'])].droplevel(1, axis='columns')
+    high = df.loc[:, df.columns.get_level_values(1).isin(['high'])].droplevel(1, axis='columns')
+    low = df.loc[:, df.columns.get_level_values(1).isin(['low'])].droplevel(1, axis='columns')
+    rsi_14 = rsi.loc[:, rsi.columns.get_level_values(1).isin([rsi_column_name])].droplevel(1, axis='columns')
+
+    lt_05 = rsi_14 < 5
+    gt_95 = rsi_14 > 95
+
+    # crossover
+    xo = lt_05
+    xu = gt_95
+    # find out if previous day was successful
+    calls_hit = xo.shift(1) & (close.shift(1) < high)
+    puts_hit = xu.shift(1) & (close.shift(1) > low)
+    df = pd.concat([xo, xu, calls_hit, puts_hit], axis=1, keys=['xo', 'xu', 'calls_hit', 'puts_hit']).swaplevel(axis=1)
+    return df
+def load_extreme_rsi(ticker, ticker_history, module_config,connection=None):
+    df = convert_ticker_history_to_data_frame(ticker, ticker_history)
+    symbols = df.columns.get_level_values(0).unique().sort_values(ascending=True)
+    rsi = pd.DataFrame()
+    rsi_params = {
+        'length': module_config['indicator_configs'][Indicator.EXTREME_RSI]['length'],
+        'rsi_length': module_config['indicator_configs'][Indicator.EXTREME_RSI]['rsi_length'],
+        'k': module_config['indicator_configs'][Indicator.EXTREME_RSI]['k'],
+        'd': module_config['indicator_configs'][Indicator.EXTREME_RSI]['d'],
+    }
+    rsi_column_name = (
+        f'STOCHRSId'
+        f'_{rsi_params["length"]}'
+        f'_{rsi_params["rsi_length"]}'
+        f'_{rsi_params["k"]}'
+        f'_{rsi_params["d"]}'
+    )
+
+    for symbol in symbols:
+        rsi_single = df[symbol].ta.stochrsi(**rsi_params)
+        rsi_single['Ticker'] = symbol
+        rsi_single = rsi_single.set_index('Ticker', append=True).unstack('Ticker').swaplevel(axis=1)
+        rsi = pd.concat([rsi, rsi_single], axis=1)
+
+    close = df.loc[:, df.columns.get_level_values(1).isin(['close'])].droplevel(1, axis='columns')
+    high = df.loc[:, df.columns.get_level_values(1).isin(['high'])].droplevel(1, axis='columns')
+    low = df.loc[:, df.columns.get_level_values(1).isin(['low'])].droplevel(1, axis='columns')
+    rsi_14 = rsi.loc[:, rsi.columns.get_level_values(1).isin([rsi_column_name])].droplevel(1, axis='columns')
+
+    gt_0day_1day = rsi_14 > rsi_14.shift(1)
+    lt_0day_1day = rsi_14 < rsi_14.shift(1)
+    lt_15 = rsi_14 < 15
+    gt_85 = rsi_14 > 85
+
+    # crossover
+    xo = gt_0day_1day & lt_15
+    xu = lt_0day_1day & gt_85
+    # find out if previous day was successful
+    calls_hit = xo.shift(1) & (close.shift(1) < high)
+    puts_hit = xu.shift(1) & (close.shift(1) > low)
+    df = pd.concat([xo, xu, calls_hit, puts_hit], axis=1, keys=['xo', 'xu', 'calls_hit', 'puts_hit']).swaplevel(axis=1)
+    return df
+def load_adx_reversal_alternative(ticker, ticker_history, module_config,connection=None):
+    df = convert_ticker_history_to_data_frame(ticker, ticker_history)
+    symbols = df.columns.get_level_values(0).unique().sort_values(ascending=True)
+    adx = pd.DataFrame()
+    for symbol in symbols:
+        adx_single = df[symbol].ta.adx()
+        adx_single['Ticker'] = symbol
+        adx_single = adx_single.set_index('Ticker', append=True).unstack('Ticker').swaplevel(axis=1)
+        adx = pd.concat([adx, adx_single], axis=1)
+
+    close = df.loc[:, df.columns.get_level_values(1).isin(['close'])].droplevel(1, axis='columns')
+    high = df.loc[:, df.columns.get_level_values(1).isin(['high'])].droplevel(1, axis='columns')
+    low = df.loc[:, df.columns.get_level_values(1).isin(['low'])].droplevel(1, axis='columns')
+    adx_14 = adx.loc[:, adx.columns.get_level_values(1).isin(['ADX_14'])].droplevel(1, axis='columns')
+    dmp_14 = adx.loc[:, adx.columns.get_level_values(1).isin(['DMP_14'])].droplevel(1, axis='columns')
+    dmn_14 = adx.loc[:, adx.columns.get_level_values(1).isin(['DMN_14'])].droplevel(1, axis='columns')
+
+    adx_is_increasing = adx_14 > adx_14.shift(1)
+    adx_is_decreasing = adx_14 < adx_14.shift(1)
+    adx_gt_40 = adx_14 > 40
+    dmp_gt_40 = dmp_14 > 40
+    dmn_gt_40 = dmn_14 > 40
+    dmp_lt_10 = dmp_14 < 10
+    dmn_lt_10 = dmn_14 < 10
+
+    # crossover
+    xo = adx_is_increasing & adx_gt_40 & dmp_gt_40 & dmn_lt_10
+    xu = adx_is_increasing & adx_gt_40 & dmn_gt_40 & dmp_lt_10
+    # find out if previous day was successful
+    calls_hit = xo.shift(1) & (close.shift(1) < high)
+    puts_hit = xu.shift(1) & (close.shift(1) > low)
+    df = pd.concat([xo, xu, calls_hit, puts_hit], axis=1, keys=['xo', 'xu', 'calls_hit', 'puts_hit']).swaplevel(axis=1)
+    return df
+
+def load_adx_reversal(ticker, ticker_history, module_config,connection=None):
+    df = convert_ticker_history_to_data_frame(ticker, ticker_history)
+    symbols = df.columns.get_level_values(0).unique().sort_values(ascending=True)
+    adx = pd.DataFrame()
+    for symbol in symbols:
+        adx_single = df[symbol].ta.adx()
+        adx_single['Ticker'] = symbol
+        adx_single = adx_single.set_index('Ticker', append=True).unstack('Ticker').swaplevel(axis=1)
+        adx = pd.concat([adx, adx_single], axis=1)
+
+    close = df.loc[:, df.columns.get_level_values(1).isin(['close'])].droplevel(1, axis='columns')
+    high = df.loc[:, df.columns.get_level_values(1).isin(['high'])].droplevel(1, axis='columns')
+    low = df.loc[:, df.columns.get_level_values(1).isin(['low'])].droplevel(1, axis='columns')
+    adx_14 = adx.loc[:, adx.columns.get_level_values(1).isin(['ADX_14'])].droplevel(1, axis='columns')
+    dmp_14 = adx.loc[:, adx.columns.get_level_values(1).isin(['DMP_14'])].droplevel(1, axis='columns')
+    dmn_14 = adx.loc[:, adx.columns.get_level_values(1).isin(['DMN_14'])].droplevel(1, axis='columns')
+
+    gt_0day_1day = adx_14 > adx_14.shift(1)
+    lt_0day_1day = adx_14 < adx_14.shift(1)
+    lt_1day_2day = adx_14.shift(1) < adx_14.shift(2)
+    gt_1day_2day = adx_14.shift(1) > adx_14.shift(2)
+    dmp_gt_0day_1day = dmp_14 > dmp_14.shift(1)
+    dmn_gt_0day_1day = dmn_14 > dmn_14.shift(1)
+
+    # crossover
+    xo = gt_0day_1day & lt_1day_2day & dmp_gt_0day_1day
+    xu = lt_0day_1day & gt_1day_2day & dmn_gt_0day_1day
+    # find out if previous day was successful
+    calls_hit = xo.shift(1) & (close.shift(1) < high)
+    puts_hit = xu.shift(1) & (close.shift(1) > low)
+    df = pd.concat([xo, xu, calls_hit, puts_hit], axis=1, keys=['xo', 'xu', 'calls_hit', 'puts_hit']).swaplevel(axis=1)
+    return df
+def load_momentum_quick(ticker, ticker_history, module_config,connection=None):
+    df = convert_ticker_history_to_data_frame(ticker, ticker_history)
+    close = df.loc[:, df.columns.get_level_values(1).isin(['close'])].droplevel(1, axis='columns')
+    high = df.loc[:, df.columns.get_level_values(1).isin(['high'])].droplevel(1, axis='columns')
+    low = df.loc[:, df.columns.get_level_values(1).isin(['low'])].droplevel(1, axis='columns')
+    sma20 = close.rolling(20).mean()
+    less_0day_1day = close - close.shift(1)
+    # crossover
+    xo = (
+            (close > close.shift(1))
+            & ((less_0day_1day + close) > sma20)
+            & (close < sma20)
+    )
+    xu = (
+            (close < close.shift(1))
+            & ((close - less_0day_1day) < sma20)
+            & (close > sma20)
+    )
+    # find out if previous day was successful
+    calls_hit = xo.shift(1) & (close.shift(1) < high)
+    puts_hit = xu.shift(1) & (close.shift(1) > low)
+    df = pd.concat([xo, xu, calls_hit, puts_hit], axis=1, keys=['xo', 'xu', 'calls_hit', 'puts_hit']).swaplevel(axis=1)
+    return df
+def load_rsi_reversal(ticker, ticker_history, module_config,connection=None):
+    df = convert_ticker_history_to_data_frame(ticker, ticker_history)
+    symbols = df.columns.get_level_values(0).unique().sort_values(ascending=True)
+    rsi = pd.DataFrame()
+    rsi_params = {
+        'length': module_config['indicator_configs'][Indicator.RSI_REVERSAL]['length'],
+        'rsi_length': module_config['indicator_configs'][Indicator.RSI_REVERSAL]['rsi_length'],
+        'k': module_config['indicator_configs'][Indicator.RSI_REVERSAL]['k'],
+        'd': module_config['indicator_configs'][Indicator.RSI_REVERSAL]['d'],
+    }
+    rsi_column_name = (
+        f'STOCHRSId'
+        f'_{rsi_params["length"]}'
+        f'_{rsi_params["rsi_length"]}'
+        f'_{rsi_params["k"]}'
+        f'_{rsi_params["d"]}'
+    )
+
+    for symbol in symbols:
+        rsi_single = df[symbol].ta.stochrsi(**rsi_params)
+        rsi_single['Ticker'] = symbol
+        rsi_single = rsi_single.set_index('Ticker', append=True).unstack('Ticker').swaplevel(axis=1)
+        rsi = pd.concat([rsi, rsi_single], axis=1)
+
+    close = df.loc[:, df.columns.get_level_values(1).isin(['close'])].droplevel(1, axis='columns')
+    high = df.loc[:, df.columns.get_level_values(1).isin(['high'])].droplevel(1, axis='columns')
+    low = df.loc[:, df.columns.get_level_values(1).isin(['low'])].droplevel(1, axis='columns')
+    rsi_14 = rsi.loc[:, rsi.columns.get_level_values(1).isin([rsi_column_name])].droplevel(1, axis='columns')
+
+    gt_0day_1day = rsi_14 > rsi_14.shift(1)
+    lt_0day_1day = rsi_14 < rsi_14.shift(1)
+    lt_1day_2day = rsi_14.shift(1) < rsi_14.shift(2)
+    gt_1day_2day = rsi_14.shift(1) > rsi_14.shift(2)
+
+    # crossover
+    xo = gt_0day_1day & lt_1day_2day
+    xu = lt_0day_1day & gt_1day_2day
+    # find out if previous day was successful
+    calls_hit = xo.shift(1) & (close.shift(1) < high)
+    puts_hit = xu.shift(1) & (close.shift(1) > low)
+    df = pd.concat([xo, xu, calls_hit, puts_hit], axis=1, keys=['xo', 'xu', 'calls_hit', 'puts_hit']).swaplevel(axis=1)
+    return df
 def load_current_breakout(ticker, ticker_history, module_config,connection=None):
     df = convert_ticker_history_to_data_frame(ticker, ticker_history)
     high = df.loc[:, df.columns.get_level_values(1).isin(['high'])].droplevel(1, axis='columns')
@@ -504,17 +761,13 @@ def load_current_breakout(ticker, ticker_history, module_config,connection=None)
     df = pd.concat([xo,xu,calls_hit,puts_hit], axis=1, keys=['xo','xu','calls_hit','puts_hit']).swaplevel(axis=1)
     return df
 def load_breakout(ticker, ticker_history, module_config,connection=None):
-    df = wrap(load_ticker_history_pd_frame(ticker, ticker_history))
-
-    # high = df.loc[:, df.columns.isin(['high'])]
-    high = df['high']#.loc[:, df.columns.isin(['high'])]
-    # dlow = df.loc[:, df.columns.isin(['low'])]
-    low = df['low']#.loc[:, df.columns.isin(['low'])]
-    # close = df.loc[:, df.columns.isin(['close'])]
-    close = df['close']#.loc[:, df.columns.isin(['close'])]
+    df = convert_ticker_history_to_data_frame(ticker, ticker_history)
+    high = df.loc[:, df.columns.get_level_values(1).isin(['high'])].droplevel(1, axis='columns')
+    low = df.loc[:, df.columns.get_level_values(1).isin(['low'])].droplevel(1, axis='columns')
+    close = df.loc[:, df.columns.get_level_values(1).isin(['close'])].droplevel(1, axis='columns')
     #
-    upper = df['high'] * (1 + 4 * (df['high'] - df['low']) / (df['high'] + df['low']))
-    lower = df['low'] * (1 - 4 * (df['high'] - df['low']) / (df['high'] + df['low']))
+    upper = high * (1 + 4 * (high - low) / (high + low))
+    lower = low * (1 - 4 * (high - low) / (high + low))
     upper_band = upper.rolling(20).mean()
     lower_band = lower.rolling(20).mean()
     sma20 = close.rolling(20).mean()
@@ -532,7 +785,7 @@ def load_breakout(ticker, ticker_history, module_config,connection=None):
     # find out if previous day was successful
     calls_hit = xo.shift(1) & (high > close.shift(1))
     puts_hit = xu.shift(1) & (low < close.shift(1))
-    df = pd.concat([xo,xu,calls_hit,puts_hit], axis=1, keys=['xo','xu','calls_hit','puts_hit'])#.swaplevel(axis=1)
+    df = pd.concat([xo,xu,calls_hit,puts_hit], axis=1, keys=['xo','xu','calls_hit','puts_hit']).swaplevel(axis=1)
     return df
     # return df['rsi']
 
@@ -832,12 +1085,50 @@ def determine_macd_alert_type(indicator_data,ticker,ticker_history, module_confi
 #     else:
 #         raise Exception(f"Could not determine MACD direction for: {ticker}")
 def determine_breakout_alert_type(indicator_data,ticker,ticker_history, module_config,connection=None):
-    if module_config['logging']:
-        print(f"Determining BREAKOUT alert type on {ticker_history[-1].dt}")
-    if indicator_data['xo'][ticker_history[-1].timestamp]:
-        return AlertType.BREAKOUT_CROSSOVER_BULLISH
-    if indicator_data['xu'][ticker_history[-1].timestamp]:
-        return AlertType.BREAKOUT_CROSSOVER_BEARISH
+    for symbol in indicator_data.columns.get_level_values(0).unique().sort_values(ascending=True):
+        if indicator_data[symbol].tail(1)['xo'].bool():
+            return AlertType.BREAKOUT_CROSSOVER_BULLISH
+        elif indicator_data[symbol].tail(1)['xu'].bool():
+            return AlertType.BREAKOUT_CROSSOVER_BEARISH
+        else:
+            traceback.print_exc()
+            raise Exception(f"Cannot determine  breakout longterm alert type for {ticker}")
+def determine_momentum_quick_alert_type(indicator_data,ticker,ticker_history, module_config,connection=None):
+    for symbol in indicator_data.columns.get_level_values(0).unique().sort_values(ascending=True):
+        if indicator_data[symbol].tail(1)['xo'].bool():
+            return AlertType.MOMENTUM_QUICK_CROSSOVER_BULLISH
+        elif indicator_data[symbol].tail(1)['xu'].bool():
+            return AlertType.MOMENTUM_QUICK_CROSSOVER_BEARISH
+        else:
+            traceback.print_exc()
+            raise Exception(f"Cannot determine  momentum quick alert type for {ticker}")
+def determine_extreme_rsi_alert_type(indicator_data,ticker,ticker_history, module_config,connection=None):
+    for symbol in indicator_data.columns.get_level_values(0).unique().sort_values(ascending=True):
+        if indicator_data[symbol].tail(1)['xo'].bool():
+            return AlertType.EXTREME_RSI_OVERSOLD
+        elif indicator_data[symbol].tail(1)['xu'].bool():
+            return AlertType.EXTREME_RSI_OVERBOUGHT
+        else:
+            traceback.print_exc()
+            raise Exception(f"Cannot determine  breakout longterm alert type for {ticker}")
+def determine_rsi_reversal_alert_type(indicator_data,ticker,ticker_history, module_config,connection=None):
+    for symbol in indicator_data.columns.get_level_values(0).unique().sort_values(ascending=True):
+        if indicator_data[symbol].tail(1)['xo'].bool():
+            return AlertType.RSI_REVERSAL_CROSSOVER_BULLISH
+        elif indicator_data[symbol].tail(1)['xu'].bool():
+            return AlertType.RSI_REVERSAL_CROSSOVER_BEARISH
+        else:
+            traceback.print_exc()
+            raise Exception(f"Cannot determine  rsi reversal alert type for {ticker}")
+def determine_extreme_rsi_alternative_alert_type(indicator_data,ticker,ticker_history, module_config,connection=None):
+    for symbol in indicator_data.columns.get_level_values(0).unique().sort_values(ascending=True):
+        if indicator_data[symbol].tail(1)['xo'].bool():
+            return AlertType.EXTREME_RSI_ALTERNATIVE_OVERSOLD
+        elif indicator_data[symbol].tail(1)['xu'].bool():
+            return AlertType.EXTREME_RSI_ALTERNATIVE_OVERBOUGHT
+        else:
+            traceback.print_exc()
+            raise Exception(f"Cannot determine  extreme rsi alternative alert type for {ticker}")
 def determine_vix_rsi_alert_type(indicator_data,ticker,ticker_history, module_config,connection=None):
     alert_type = determine_rsi_alert_type(indicator_data, ticker, ticker_history, module_config)
     if alert_type == AlertType.RSI_OVERBOUGHT:
@@ -934,23 +1225,15 @@ def determine_adx_alert_type(data, ticker,ticker_data,  module_config,connection
 #
 # def determine_dmi_alert_type(data, ticker, ticker_data, module_config):
 
-def determine_adx_reversal_alert_type(dmi_data, ticker, ticker_data, module_config,connection=None):
-    if dmi_data['adx'][ticker_data[-1].timestamp] > module_config['indicator_configs'][Indicator.ADX_REVERSAL]['adx_reversal_threshold'] and ((dmi_data['adx'][ticker_data[-1].timestamp] > dmi_data['dmi+'][ticker_data[-1].timestamp] and dmi_data['dmi+'][ticker_data[-1].timestamp] > dmi_data['dmi-'][ticker_data[-1].timestamp]) or (dmi_data['adx'][ticker_data[-1].timestamp] > dmi_data['dmi-'][ticker_data[-1].timestamp] and dmi_data['dmi-'][ticker_data[-1].timestamp] > dmi_data['dmi+'][ticker_data[-1].timestamp])):
-
-        # if dmi_data['adx'][ticker_data[-1].timestamp] > module_config['adx_threshold'] and dmi_data['adx'][ticker_data[-1].timestamp] > dmi_data['adx'][ticker_data[-2].timestamp]:
-        # leading_dmi = 'dmi+' if dmi_data['dmi+'][ticker_data[-1].timestamp] > dmi_data['dmi-'][ticker_data[-1].timestamp] else 'dmi-'
-        # leading_dmi = 'dmi+' if dmi_data['dmi+'][ticker_data[-1].timestamp] > dmi_data['dmi-'][ticker_data[-2].timestamp] else 'dmi-'
-        if dmi_data['dmi+'][ticker_data[-1].timestamp] > dmi_data['dmi-'][ticker_data[-1].timestamp]:
+def determine_adx_reversal_alert_type(indicator_data, ticker, ticker_data, module_config,connection=None):
+    for symbol in indicator_data.columns.get_level_values(0).unique().sort_values(ascending=True):
+        if indicator_data[symbol].tail(1)['xo'].bool():
+            return AlertType.ADX_REVERSAL_BULLISH
+        elif indicator_data[symbol].tail(1)['xu'].bool():
             return AlertType.ADX_REVERSAL_BEARISH
         else:
-            return AlertType.   ADX_REVERSAL_BULLISH
-        # trailing_dmi = 'dmi+' if dmi_data['dmi+'][ticker_data[-1].timestamp] < dmi_data['dmi-'][ticker_data[-2].timestamp] else 'dmi-'
-
-        # if dmi_data[leading_dmi][ticker_data[-1].timestamp] < dmi_data[leading_dmi][ticker_data[-1].timestamp] and dmi_data['adx'][ticker_data[-1].timestamp] > dmi_data['adx'][ticker_data[-2].timestamp]:
-        #     if
-
-    else:
-        return False
+            traceback.print_exc()
+            raise Exception(f"Cannot determine  adx reversal alert type for {ticker}")
 
 
 def determine_dmi_alert_type(data, ticker, ticker_data, module_config,connection=None):
@@ -1057,6 +1340,15 @@ def determine_breakout_longterm_alert_type(indicator_data,ticker,ticker_history,
             return AlertType.BREAKOUT_LONGTERM_CROSSOVER_BULLISH
         elif indicator_data[symbol].tail(1)['xu'].bool():
             return  AlertType.BREAKOUT_LONGTERM_CROSSOVER_BEARISH
+        else :
+            traceback.print_exc()
+            raise Exception(f"Cannot determine  breakout longterm alert type for {ticker}")
+def determine_adx_reversal_alternative_alert_type(indicator_data,ticker,ticker_history, module_config,connection=None):
+    for symbol in indicator_data.columns.get_level_values(0).unique().sort_values(ascending=True):
+        if indicator_data[symbol].tail(1)['xo'].bool():
+            return AlertType.ADX_REVERSAL_ALTERNATIVE_BULLISH
+        elif indicator_data[symbol].tail(1)['xu'].bool():
+            return  AlertType.ADX_REVERSAL_ALTERNATIVE_BEARISH
         else :
             traceback.print_exc()
             raise Exception(f"Cannot determine  breakout longterm alert type for {ticker}")

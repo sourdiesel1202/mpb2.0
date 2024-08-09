@@ -5,7 +5,9 @@ from strategy import IronCondor, Strategy, LongCall, LongPut
 from stockstats import wrap
 from indicators import load_rsi, get_indicator_inventory, load_macd, load_sma, load_dmi_adx, load_breakout, \
     load_death_cross, load_golden_cross, load_support_resistance, load_vix_rsi, load_stochastic_rsi, \
-    load_breakout_predict, load_breakout_longterm, load_adx_crossover, load_current_breakout
+    load_breakout_predict, load_breakout_longterm, load_adx_crossover, load_current_breakout, load_extreme_rsi, \
+    load_extreme_rsi_alternative, load_momentum_quick, load_rsi_reversal, load_adx_reversal, \
+    load_adx_reversal_alternative
 
 
 def perform_backtest(ticker, ticker_history, strategy_type, module_config, connection=None):
@@ -145,8 +147,10 @@ def load_indicator_data(ticker, ticker_history, module_config, connection):
             indicator_dict[indicator]=load_vix_rsi(ticker, ticker_history, module_config, connection=connection)
         if indicator == Indicator.STOCHASTIC_RSI:
             indicator_dict[indicator]=load_stochastic_rsi(ticker, ticker_history, module_config, connection=connection)
-        if indicator in  [Indicator.ADX, Indicator.DMI, Indicator.ADX_REVERSAL]:
+        if indicator in  [Indicator.ADX, Indicator.DMI]:
             indicator_dict[indicator]=load_dmi_adx(ticker, ticker_history, module_config)
+        if indicator == Indicator.ADX_REVERSAL:
+            indicator_dict[indicator]=load_adx_reversal(ticker, ticker_history, module_config)
         if indicator == Indicator.BREAKOUT_PREDICT:
             indicator_dict[indicator]=load_breakout_predict(ticker, ticker_history, module_config)
         if indicator == Indicator.BREAKOUT_LONGTERM:
@@ -155,6 +159,16 @@ def load_indicator_data(ticker, ticker_history, module_config, connection):
             indicator_dict[indicator]=load_adx_crossover(ticker, ticker_history, module_config)
         if indicator == Indicator.CURRENT_BREAKOUT:
             indicator_dict[indicator]=load_current_breakout(ticker, ticker_history, module_config)
+        if indicator == Indicator.EXTREME_RSI:
+            indicator_dict[indicator]=load_extreme_rsi(ticker, ticker_history, module_config)
+        if indicator == Indicator.EXTREME_RSI_ALTERNATIVE:
+            indicator_dict[indicator]=load_extreme_rsi_alternative(ticker, ticker_history, module_config)
+        if indicator == Indicator.MOMENTUM_QUICK:
+            indicator_dict[indicator]=load_momentum_quick(ticker, ticker_history, module_config)
+        if indicator == Indicator.RSI_REVERSAL:
+            indicator_dict[indicator]=load_rsi_reversal(ticker, ticker_history, module_config)
+        if indicator == Indicator.ADX_REVERSAL_ALTERNATIVE:
+            indicator_dict[indicator]=load_adx_reversal_alternative(ticker, ticker_history, module_config)
 
 
 

@@ -22,6 +22,9 @@ if __name__ == '__main__':
             print(f"Running scan of {ticker}")
         # print(int(calculate_what_is_x_percentage_of_y(1,542)))
             ticker_history = load_ticker_history_db(ticker, module_config,connection)
+            if len(ticker_history) < module_config['indicator_initial_range']:
+                print(f"{ticker} has ticker history periods of: {len(ticker_history)}, minimum is {module_config['indicator_initial_range']}. Skipping")
+                continue
             process_ticker_history(connection, ticker, ticker_history, module_config,  process_alerts=True)
             write_ticker_history_db_entries(connection, ticker, ticker_history,module_config, cache=False)
         connection.close()
