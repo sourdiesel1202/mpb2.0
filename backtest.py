@@ -57,9 +57,10 @@ def backtest_strategy_with_indicators(ticker, ticker_history, module_config, con
         if i < module_config['strategy_configs'][module_config['strategy']]['position_length']+module_config['indicator_initial_range']:
             continue
         else:
+            # print(f"Backtesting {ticker} at {ticker_history[i].dt}")
             if module_config['logging']:
                 print(f"Backtesting {ticker} at {ticker_history[i].dt}")
-            if not did_ticker_trigger_alerts_at_index(ticker, ticker_history, indicator_data, i, module_config):
+            if not did_ticker_trigger_alerts_at_index(ticker, ticker_history,indicator_data,  i, module_config):
                 continue
             strategy = Strategy(ticker_history[i-module_config['strategy_configs'][module_config['strategy']]['position_length']].dt, module_config['strategy_configs'][module_config['strategy']]['position_length'])
             #determine strategy type
@@ -87,13 +88,15 @@ def backtest_strategy_with_indicators(ticker, ticker_history, module_config, con
 #     rsi= wrap(load_ticker_history_pd_frame(ticker, ticker_history))['rsi']
 
 
-def did_ticker_trigger_alerts_at_index(ticker, ticker_history,indicator_data, index, module_config):
+def did_ticker_trigger_alerts_at_index(ticker, ticker_history, indicator_data,index, module_config):
     tmp_ticker_history = ticker_history[:-(len(ticker_history)-1-index)]
     indicator_inventory = get_indicator_inventory()
     if module_config['logging']:
         print(f"Getting {ticker} indicator value at {tmp_ticker_history[-1].dt}")
     for indicator in module_config['indicators']:
         # def did_rsi_alert(indicator_data, ticker, ticker_history, module_config, connection=None):
+        # def load_breakout(ticker, ticker_history, module_config, connection=None):
+        # indicator_data = indicator_inventory[indicator][InventoryFunctionTypes.LOAD](ticker,tmp_ticker_history,module_config,connection)
         if not indicator_inventory[indicator][InventoryFunctionTypes.DID_ALERT](indicator_data[indicator], ticker, tmp_ticker_history, module_config):
             #so basically this allows us to say it alerted when the indicator value is outside of the range, an event DIDN"T happen, etc
             #use case for this is RSI, if inverse then flags as alerting when the rsi is between the oversold and overbought value

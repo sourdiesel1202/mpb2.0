@@ -1,13 +1,13 @@
 {
   "logging": false,
 
-  "strategy": "LONG_CALL",
   "test_mode": false,
-  "tickers": ["SPY", "QQQ", "DIA", "F", "GOOG", "VZ"],
+  "tickers": ["ULTA", "MGM", "EBAY"],
   "timespan": "day",
   "timespan_multiplier": 1,
+  "strategy": "LONG_CALL",
   "use_indicators": true,
-  "indicators": [ "ADX_REVERSAL_ALTERNATIVE"],
+  "indicators": [ "CURRENT_BREAKOUT"],
   "indicator_initial_range":300
 
 }

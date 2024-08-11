@@ -199,9 +199,9 @@ def execute_update(connection,sql, auto_commit=True, verbose=False, cache=True):
 
         if auto_commit:
             try:
-                cursor.commit()
+                connection.commit()
             except:
-                pass
+                traceback.print_exc()
             connection.commit()
         cursor.close()
         pass

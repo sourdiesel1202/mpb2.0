@@ -18,6 +18,7 @@ if __name__ == '__main__':
     connection = obtain_db_connection(module_config)
 
     try:
+
         for ticker in module_config['tickers']:
             print(f"Running Backtest of {ticker}")
         # print(int(calculate_what_is_x_percentage_of_y(1,542)))

@@ -40,14 +40,14 @@ if __name__ == '__main__':
     connection = obtain_db_connection(module_config)
 
     try:
-        tickers = read_csv('data/sp500_tickers.csv')
+        # tickers = read_csv('data/sp500_tickers.csv')
         # tickers = module_config['tickers']
-        tickers = [tickers[i][0] for i in range(1, len(tickers))]
-        print(json.dumps(tickers))
-        print(f"Loading Ticker Data for {len(tickers)} tickers")
+        # tickers = [tickers[i][0] for i in range(1, len(tickers))]
+        # print(json.dumps(tickers))
+        print(f"Loading Ticker Data for {len(module_config['tickers'])} tickers")
         # for ticker in tickers:
-        for i in range(0, len(tickers)):
-            ticker=tickers[i]
+        for i in range(0, len(module_config['tickers'])):
+            ticker=module_config['tickers'][i]
             print(f"Loading data for {ticker}")
             download_raw_yahoo_data(ticker,module_config)
             raw_data = read_csv(f"{module_config['data_dir']}/{ticker}.csv")

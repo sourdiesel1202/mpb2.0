@@ -759,6 +759,7 @@ def load_current_breakout(ticker, ticker_history, module_config,connection=None)
     calls_hit = xo.shift(1) & (high > close.shift(1))
     puts_hit = xu.shift(1) & (low < close.shift(1))
     df = pd.concat([xo,xu,calls_hit,puts_hit], axis=1, keys=['xo','xu','calls_hit','puts_hit']).swaplevel(axis=1)
+    print(df)
     return df
 def load_breakout(ticker, ticker_history, module_config,connection=None):
     df = convert_ticker_history_to_data_frame(ticker, ticker_history)
@@ -930,7 +931,7 @@ def did_dataframe_indicator_alert(indicator_data, ticker, ticker_history, module
     if ticker not in symbols:
         return  False
     for symbol in symbols:
-        if indicator_data[symbol].tail(1)['xo'].bool() or indicator_data[symbol].tail(1)['xu'].bool():
+        if indicator_data.loc[ticker_history[-1].dt][symbol]['xo'] or indicator_data.loc[ticker_history[-1].dt][symbol]['xu']:
             return True
         else:
             return False
@@ -1086,45 +1087,45 @@ def determine_macd_alert_type(indicator_data,ticker,ticker_history, module_confi
 #         raise Exception(f"Could not determine MACD direction for: {ticker}")
 def determine_breakout_alert_type(indicator_data,ticker,ticker_history, module_config,connection=None):
     for symbol in indicator_data.columns.get_level_values(0).unique().sort_values(ascending=True):
-        if indicator_data[symbol].tail(1)['xo'].bool():
+        if indicator_data.loc[ticker_history[-1].dt][symbol]['xo']:
             return AlertType.BREAKOUT_CROSSOVER_BULLISH
-        elif indicator_data[symbol].tail(1)['xu'].bool():
+        elif indicator_data.loc[ticker_history[-1].dt][symbol]['xu']:
             return AlertType.BREAKOUT_CROSSOVER_BEARISH
         else:
             traceback.print_exc()
             raise Exception(f"Cannot determine  breakout longterm alert type for {ticker}")
 def determine_momentum_quick_alert_type(indicator_data,ticker,ticker_history, module_config,connection=None):
     for symbol in indicator_data.columns.get_level_values(0).unique().sort_values(ascending=True):
-        if indicator_data[symbol].tail(1)['xo'].bool():
+        if indicator_data.loc[ticker_history[-1].dt][symbol]['xo']:
             return AlertType.MOMENTUM_QUICK_CROSSOVER_BULLISH
-        elif indicator_data[symbol].tail(1)['xu'].bool():
+        elif indicator_data.loc[ticker_history[-1].dt][symbol]['xu']:
             return AlertType.MOMENTUM_QUICK_CROSSOVER_BEARISH
         else:
             traceback.print_exc()
             raise Exception(f"Cannot determine  momentum quick alert type for {ticker}")
 def determine_extreme_rsi_alert_type(indicator_data,ticker,ticker_history, module_config,connection=None):
     for symbol in indicator_data.columns.get_level_values(0).unique().sort_values(ascending=True):
-        if indicator_data[symbol].tail(1)['xo'].bool():
+        if indicator_data.loc[ticker_history[-1].dt][symbol]['xo']:
             return AlertType.EXTREME_RSI_OVERSOLD
-        elif indicator_data[symbol].tail(1)['xu'].bool():
+        elif indicator_data.loc[ticker_history[-1].dt][symbol]['xu']:
             return AlertType.EXTREME_RSI_OVERBOUGHT
         else:
             traceback.print_exc()
             raise Exception(f"Cannot determine  breakout longterm alert type for {ticker}")
 def determine_rsi_reversal_alert_type(indicator_data,ticker,ticker_history, module_config,connection=None):
     for symbol in indicator_data.columns.get_level_values(0).unique().sort_values(ascending=True):
-        if indicator_data[symbol].tail(1)['xo'].bool():
+        if indicator_data.loc[ticker_history[-1].dt][symbol]['xo']:
             return AlertType.RSI_REVERSAL_CROSSOVER_BULLISH
-        elif indicator_data[symbol].tail(1)['xu'].bool():
+        elif indicator_data.loc[ticker_history[-1].dt][symbol]['xu']:
             return AlertType.RSI_REVERSAL_CROSSOVER_BEARISH
         else:
             traceback.print_exc()
             raise Exception(f"Cannot determine  rsi reversal alert type for {ticker}")
 def determine_extreme_rsi_alternative_alert_type(indicator_data,ticker,ticker_history, module_config,connection=None):
     for symbol in indicator_data.columns.get_level_values(0).unique().sort_values(ascending=True):
-        if indicator_data[symbol].tail(1)['xo'].bool():
+        if indicator_data.loc[ticker_history[-1].dt][symbol]['xo']:
             return AlertType.EXTREME_RSI_ALTERNATIVE_OVERSOLD
-        elif indicator_data[symbol].tail(1)['xu'].bool():
+        elif indicator_data.loc[ticker_history[-1].dt][symbol]['xu']:
             return AlertType.EXTREME_RSI_ALTERNATIVE_OVERBOUGHT
         else:
             traceback.print_exc()
@@ -1227,9 +1228,9 @@ def determine_adx_alert_type(data, ticker,ticker_data,  module_config,connection
 
 def determine_adx_reversal_alert_type(indicator_data, ticker, ticker_data, module_config,connection=None):
     for symbol in indicator_data.columns.get_level_values(0).unique().sort_values(ascending=True):
-        if indicator_data[symbol].tail(1)['xo'].bool():
+        if indicator_data.loc[ticker_data[-1].dt][symbol]['xo']:
             return AlertType.ADX_REVERSAL_BULLISH
-        elif indicator_data[symbol].tail(1)['xu'].bool():
+        elif indicator_data.loc[ticker_data[-1].dt][symbol]['xu']:
             return AlertType.ADX_REVERSAL_BEARISH
         else:
             traceback.print_exc()
@@ -1327,45 +1328,55 @@ def determine_sr_direction(indicator_data,ticker,ticker_history, module_config,c
             return AlertType.SUPPORT_RESISTANCE_BREAKOUT_DOWN#+f"==>${round(distance_to_points[0]+ticker_history[-1].close,2)} (${round(distance_to_points[0],2)}/{round(float(distance_to_points[0] / ticker_history[-1].close)*100,2)}%)"
 def determine_current_breakout_alert_type(indicator_data,ticker,ticker_history, module_config,connection=None):
     for symbol in indicator_data.columns.get_level_values(0).unique().sort_values(ascending=True):
-        if indicator_data[symbol].tail(1)['xo'].bool():
+        if indicator_data.loc[ticker_history[-1].dt][symbol]['xo']:
             return AlertType.CURRENT_BREAKOUT_CROSSOVER_BULLISH
-        elif indicator_data[symbol].tail(1)['xu'].bool():
+        elif indicator_data.loc[ticker_history[-1].dt][symbol]['xu']:
             return  AlertType.CURRENT_BREAKOUT_CROSSOVER_BULLISH
         else :
             traceback.print_exc()
             raise Exception(f"Cannot determine current breakout alert type for {ticker}")
 def determine_breakout_longterm_alert_type(indicator_data,ticker,ticker_history, module_config,connection=None):
     for symbol in indicator_data.columns.get_level_values(0).unique().sort_values(ascending=True):
-        if indicator_data[symbol].tail(1)['xo'].bool():
+        if indicator_data.loc[ticker_history[-1].dt][symbol]['xo']:
             return AlertType.BREAKOUT_LONGTERM_CROSSOVER_BULLISH
-        elif indicator_data[symbol].tail(1)['xu'].bool():
+        elif indicator_data.loc[ticker_history[-1].dt][symbol]['xu']:
             return  AlertType.BREAKOUT_LONGTERM_CROSSOVER_BEARISH
         else :
             traceback.print_exc()
             raise Exception(f"Cannot determine  breakout longterm alert type for {ticker}")
 def determine_adx_reversal_alternative_alert_type(indicator_data,ticker,ticker_history, module_config,connection=None):
     for symbol in indicator_data.columns.get_level_values(0).unique().sort_values(ascending=True):
-        if indicator_data[symbol].tail(1)['xo'].bool():
+        if indicator_data.loc[ticker_history[-1].dt][symbol]['xo']:
             return AlertType.ADX_REVERSAL_ALTERNATIVE_BULLISH
-        elif indicator_data[symbol].tail(1)['xu'].bool():
+        elif indicator_data.loc[ticker_history[-1].dt][symbol]['xu']:
             return  AlertType.ADX_REVERSAL_ALTERNATIVE_BEARISH
         else :
             traceback.print_exc()
             raise Exception(f"Cannot determine  breakout longterm alert type for {ticker}")
 def determine_adx_crossover_alert_type(indicator_data,ticker,ticker_history, module_config,connection=None):
+    symbols = indicator_data.columns.get_level_values(0).unique().sort_values(ascending=True)
+    if ticker not in symbols:
+        return False
+    # for symbol in symbols:
+    #     if indicator_data.loc[ticker_history[-1].dt][symbol]['xo'] or indicator_data.loc[ticker_history[-1].dt][symbol][
+    #         'xu']:
+    #         return True
+    #     else:
+    #         return False
+
     for symbol in indicator_data.columns.get_level_values(0).unique().sort_values(ascending=True):
-        if indicator_data[symbol].tail(1)['xo'].bool():
+        if indicator_data.loc[ticker_history[-1].dt][symbol]['xo']:
             return AlertType.ADX_CROSSOVER_BULLISH
-        elif indicator_data[symbol].tail(1)['xu'].bool():
+        elif indicator_data.loc[ticker_history[-1].dt][symbol]['xu']:
             return  AlertType.ADX_CROSSOVER_BEARISH
         else :
             traceback.print_exc()
             raise Exception(f"Cannot determine modified breakout alert type for {ticker}")
 def determine_breakout_predict_alert_type(indicator_data,ticker,ticker_history, module_config,connection=None):
     for symbol in indicator_data.columns.get_level_values(0).unique().sort_values(ascending=True):
-        if indicator_data[symbol].tail(1)['xo'].bool():
+        if indicator_data.loc[ticker_history[-1].dt][symbol]['xo']:
             return AlertType.BREAKOUT_PREDICT_CROSSOVER_BULLISH
-        elif indicator_data[symbol].tail(1)['xu'].bool():
+        elif indicator_data.loc[ticker_history[-1].dt][symbol]['xu']:
             return  AlertType.BREAKOUT_PREDICT_CROSSOVER_BEARISH
         else:
             raise Exception(f"Cannot determine breakout predict alert type")

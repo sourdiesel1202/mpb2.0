@@ -377,7 +377,7 @@ def convert_ticker_history_to_data_frame(ticker, ticker_history, convert_to_date
     data = {ticker:{'open': pd.Series([x.open for x in ticker_history], index=[x.dt for x in ticker_history]),'close': pd.Series([x.close for x in ticker_history],index=[x.dt for x in ticker_history]), 'high': pd.Series([x.high for x in ticker_history],index=[x.dt for x in ticker_history]),'low': pd.Series([x.low for x in ticker_history],index=[x.dt for x in ticker_history]), 'volume': pd.Series([x.volume for x in ticker_history],index=[x.dt for x in ticker_history])}}
     reform = {(outerKey, innerKey): values for outerKey, innerDict in data.items() for innerKey, values in innerDict.items()}
     tmp = pd.DataFrame(reform)
-    print(tmp)
+    # print(tmp)
 
 
     return tmp
