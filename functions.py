@@ -192,7 +192,7 @@ def execute_update(connection,sql, auto_commit=True, verbose=False, cache=True):
             try:
                 cursor.execute(sql)
             except Exception as e:
-                # traceback.print_exc()
+                traceback.print_exc()
                 with open(f"sql/errors.sql", "a+") as f:
                     f.writelines(f"{sql}")
                     pass

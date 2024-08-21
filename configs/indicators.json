@@ -1,6 +1,6 @@
 {
   "RSI": {
-    "rsi_overbought_threshold": 60,
+    "rsi_overbought_threshold": 70,
     "rsi_oversold_threshold": 30,
     "inverse": true,
     "require_alert_type": true,

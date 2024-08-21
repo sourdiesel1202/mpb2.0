@@ -65,7 +65,7 @@ def backtest_strategy_with_indicators(ticker, ticker_history, module_config, con
             strategy = Strategy(ticker_history[i-module_config['strategy_configs'][module_config['strategy']]['position_length']].dt, module_config['strategy_configs'][module_config['strategy']]['position_length'])
             #determine strategy type
             if module_config['strategy'] == StrategyType.IRON_CONDOR:
-                strategy = IronCondor(*IronCondor.generate_strikes(ticker_history[i], module_config),ticker_history[i].dt, module_config['strategy_configs'][module_config['strategy']]['position_length'])
+                strategy = IronCondor(ticker_history[i].close,*IronCondor.generate_strikes(ticker_history[i].close, ticker_history[:-(len(ticker_history)-1-i)], module_config),ticker_history[i].dt, module_config['strategy_configs'][module_config['strategy']]['position_length'])
             elif module_config['strategy'] == StrategyType.LONG_CALL:
                 strategy = LongCall(ticker_history[i],ticker_history[i].dt, module_config['strategy_configs'][module_config['strategy']]['position_length'])
             elif module_config['strategy'] == StrategyType.LONG_PUT:

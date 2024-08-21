@@ -23,15 +23,11 @@ if __name__ == '__main__':
             print(f"Running Backtest of {ticker}")
         # print(int(calculate_what_is_x_percentage_of_y(1,542)))
             ticker_history = load_ticker_history_db(ticker, module_config,connection)
-            print_backtest_results(ticker,perform_backtest(ticker, ticker_history, "IRON_CONDOR", module_config,connection), module_config)
-            # IronCondor.generate_strikes(ticker_history[-1].close,module_config )
-        # tickers = module_config['tickers']
-        # print(f"Loading Ticker Data for {len(tickers)} tickers")
-        # for ticker in tickers:
-        #     print(f"SPYLoading data for {ticker}")
-        #     raw_data = read_csv(f"{module_config['data_dir']}/{ticker}.csv")
-        #     ticker_history = load_ticker_history_db()
-        #     write_ticker_history_db_entries(connection, ticker, ticker_history,module_config, cache=False)
+            backtest_results  = perform_backtest(ticker, ticker_history, "IRON_CONDOR", module_config,connection)
+            json_positions = [x.serialize() for x in backtest_results['positions']]
+            positions = [IronCondor.deserialize(x) for x in json_positions]
+            print_backtest_results(ticker,backtest_results, module_config)
+
         connection.close()
 
 

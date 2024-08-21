@@ -5,7 +5,7 @@
   "tickers": ["ULTA", "MGM", "EBAY"],
   "timespan": "day",
   "timespan_multiplier": 1,
-  "strategy": "LONG_CALL",
+  "strategy": "IRON_CONDOR",
   "use_indicators": true,
   "indicators": [ "CURRENT_BREAKOUT"],
   "indicator_initial_range":300

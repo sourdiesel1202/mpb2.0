@@ -56,15 +56,19 @@ def generate_strategy_config_combinations(strategy, module_config):
     else:
         integer_permutations = [{}]  # if there are none add one as the basis for  the generation
     config_combinations = []
-    if module_config['logging']:
-        print(f"Building strategy configs for {len(integer_permutations)} permutations of {strategy} configs")
+    # if module_config['logging']:
+    print(f"Building strategy configs for {len(integer_permutations)} permutations of {strategy} configs")
     for i in range(0, len(integer_permutations)):
         # new_permutation = copy(integer_permutations[i])
         new_permutation = {}
-        for perm in integer_permutations[i]:
-            for k, v in perm.items():
-                new_permutation[k] = copy(v)
-
+        # for perm in integer_permutations:
+        perm = integer_permutations[i]
+        for k, v in perm.items():
+            new_permutation[k] = copy(v)
+        for k, v in module_config['strategy_configs'][strategy].items():
+            if k not in new_permutation:
+                new_permutation[k] = v
+                    # fix for not passing in integer manipulations
         # for inverse_flag in [True, False]:
         #     for require_alert_flag in [True, False]:
         #         new_permutation = {}
@@ -120,6 +124,9 @@ def generate_indicator_config_combinations(indicator, module_config):
                 new_permutation = copy(new_permutation)
                 new_permutation['inverse'] = inverse_flag
                 new_permutation['require_alert_type'] = require_alert_flag
+                for k,v in module_config['indicator_configs'][indicator].items():
+                    if k not in new_permutation:
+                        new_permutation[k]=v #fix for not passing in integer manipulations
                 if not require_alert_flag:
                     # continue
                     config_combinations.append(copy(new_permutation))
@@ -129,6 +136,7 @@ def generate_indicator_config_combinations(indicator, module_config):
                     tmp = alert_type
                     new_permutation['alert_type'] =copy(tmp)
                     config_combinations.append(copy(new_permutation))
+
 
     return config_combinations
     #then generate the list with inverse flag
@@ -174,10 +182,13 @@ def generate_indicator_configs( module_config):
 
 
 def _perform_automated_subprocess_backtest(backtest_objects):
+
     _connection = obtain_db_connection(backtest_objects[0].module_config)
     try:
         backtest_report = [["ticker", "strategy", "indicators", "total_positions", "winners", "losers", "percentage", "indicator_configs","strategy_configs"]]
-        for backtest_object in backtest_objects:
+        for i in range(0, len(backtest_objects)):# in backtest_objects:
+            print(f"Performing backtest {i}/{len(backtest_objects)-1} in PID:{os.getpid()}")
+            backtest_object = backtest_objects[i]
             backtest_report.append(backtest_object.perform_backtest(_connection))
         write_csv(f"data/backtests/{os.getpid()}backtest.csv", backtest_report)
         _connection.close()
@@ -206,10 +217,18 @@ def _perform_automated_backtest( module_config, connection):
                 #then run each unique strategy config per strategy
                 for indicator_config in indicator_configs:
                     #iterate over the indicator configs
-                    for indicator_list in [x for x in all_possible_combinations(module_config['automate_indicators']) if len(x) > 0]:
+                    if not module_config['backtest_independently']:
+                        indicator_lists =  [x for x in all_possible_combinations(module_config['automate_indicators']) if len(x) >0]
+                    else:
+                        indicator_lists = [[y] for y in module_config['automate_indicators']]
+                    for indicator_list in indicator_lists:
+
                         #then over the potential indicator configs
                         #so now we can stub in
                         tmp_module_config = copy(module_config)
+                        # tmp_module_config = {}
+                        # for k,v in module_config.items():
+                        #     tmp_module_config[k]=v
                         tmp_module_config['strategy_configs']=strategy_config
                         tmp_module_config['strategy'] = strategy
                         tmp_module_config['indicator_configs']=indicator_config
@@ -221,10 +240,11 @@ def _perform_automated_backtest( module_config, connection):
                         # backtest_report.append([ticker,strategy,'|'.join(indicator_list),len(backtest_results['positions']), backtest_results['winners'], backtest_results['losers'],calculate_x_is_what_percentage_of_y(backtest_results['winners'], len(backtest_results['positions'])), json.dumps(indicator_config), json.dumps(strategy_config)])
     # return backtest_report
     # for field, min_max in module_config['indicator_manipulations'][indicator]['integer_values'].items()
+    # _perform_automated_subprocess_backtest(backtests)
     pids = process_list_concurrently(backtests, _perform_automated_subprocess_backtest,int(len(backtests)/module_config['num_processes']))
     files = [f"data/backtests/{pid}backtest.csv" for pid in pids]
     write_csv(f"data/backtests/backtest.csv",combine_csvs(files))
-    # pass
+    # # pass
 if __name__ == '__main__':
 
     start_time = time.time()

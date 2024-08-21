@@ -23,6 +23,7 @@ def _write_backtest(ticker, ticker_history,  module_config, connection):
             module_config['indicator_configs'][alerts[i][0]]['require_alert_type'] = True
             module_config['indicator_configs'][alerts[i][0]]['alert_type'] = alerts[i][1]
 
+            #now we get it sexxy (get it sexxy, get it sexxy)
             for length in [5,10,15,20]:
                 module_config['strategy_configs'][strategy]['position_length'] = length
                 if len(execute_query(connection,f"select id from backtests_backtest where ticker_id = (select id from tickers_ticker where symbol='{ticker}') and indicator_id = (select id from indicators_indicator where name='{alerts[i][0]}') and alert_type= '{alerts[i][1]}' and strategy_id =(select id from strategies_strategy where name='{strategy}') and position_length={length}")) == 1:
@@ -39,7 +40,6 @@ def _write_backtest(ticker, ticker_history,  module_config, connection):
                         execute_update(connection, update_sql, auto_commit=True, cache=False)
                 else:
                     print(f"Already backtested {length} day {strategy}s on {ticker} for {alerts[i][0]}:{alerts[i][1]} ")
-            #now we get it sexxy (get it sexxy, get it sexxy)
             # print(update_sql)
 if __name__ == '__main__':
 
