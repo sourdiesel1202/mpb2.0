@@ -2,10 +2,10 @@
   "logging": false,
 
   "test_mode": false,
-  "tickers": ["ULTA", "MGM", "EBAY"],
+  "tickers": ["SPY"],
   "timespan": "day",
   "timespan_multiplier": 1,
-  "strategy": "IRON_CONDOR",
+  "strategy": "IRON_BUTTERFLY",
   "use_indicators": true,
   "indicators": [ "CURRENT_BREAKOUT"],
   "indicator_initial_range":300

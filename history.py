@@ -6,7 +6,7 @@ import traceback
 
 import mibian
 import requests
-from polygon import OptionSymbol
+# from polygon import OptionSymbol
 from polygon.rest import RESTClient
 
 # from db_functions import combine_db_update_files, execute_bulk_update_file
@@ -54,9 +54,9 @@ class ContractHistory(TickerHistory):
     rho = 0.0
     underlying_close = 0.0
     contract = ''
-    def __init__(self,contract,underlying_close, open, close, high, low, volume, timestamp):
+    def __init__(self,contract,underlying_close,last_price):
+        super().__init__( 0, 0, 0, 0, 0, 0)
 
-        super().__init__( open, close, high, low, volume, timestamp)
         self.contract = contract
         self.underlying_close = underlying_close
         self.calculate_greeks()
@@ -66,9 +66,9 @@ class ContractHistory(TickerHistory):
         if len(self.contract) == 0:
             raise  Exception("Cannot calculate greeks for a ContractHistory with no contract attribute specified")
         # contract_details = polygon.parse_option_symbol(self.contract)
-        option_symbol = OptionSymbol(self.contract)
-        dte = (datetime.datetime(*option_symbol.expiry.timetuple()[:-4]) - datetime.datetime.now()).days
-        position_type = PositionType.LONG if option_symbol.call_or_put.upper() == PositionType.LONG_OPTION[0].upper() else PositionType.SHORT
+        # option_symbol = OptionSymbol(self.contract)
+        # dte = (datetime.datetime(*option_symbol.expiry.timetuple()[:-4]) - datetime.datetime.now()).days
+        # position_type = PositionType.LONG if option_symbol.call_or_put.upper() == PositionType.LONG_OPTION[0].upper() else PositionType.SHORT
         if position_type == PositionType.LONG:
             _tmp_iv = mibian.BS([self.underlying_close, float(option_symbol.strike_price), 0, dte],
                                 callPrice=self.close).impliedVolatility
@@ -141,6 +141,50 @@ def  load_ticker_history_cached(ticker,module_config):
         ticker_history.append(TickerHistory(*[float(x) if '.' in x else int(x) for x in entry]))
 
     return ticker_history
+
+# class ContractHistory(TickerHistory):
+#     implied_volatility = 0.0
+#     delta = 0.0
+#     theta = 0.0
+#     gamma = 0.0
+#     rho = 0.0
+#     underlying_close = 0.0
+#     contract = ''
+#     def __init__(self,contract,underlying_close, open, close, high, low, volume, timestamp):
+#
+#         super().__init__( open, close, high, low, volume, timestamp)
+#         self.contract = contract
+#         self.underlying_close = underlying_close
+#         self.calculate_greeks()
+#         #ok so once we've called the constructor, we can go ahead and set our  greeks
+#
+#     def calculate_greeks(self):
+#         if len(self.contract) == 0:
+#             raise  Exception("Cannot calculate greeks for a ContractHistory with no contract attribute specified")
+#         # contract_details = polygon.parse_option_symbol(self.contract)
+#         option_symbol = OptionSymbol(self.contract)
+#         dte = (datetime.datetime(*option_symbol.expiry.timetuple()[:-4]) - datetime.datetime.now()).days
+#         position_type = PositionType.LONG if option_symbol.call_or_put.upper() == PositionType.LONG_OPTION[0].upper() else PositionType.SHORT
+#         if position_type == PositionType.LONG:
+#             _tmp_iv = mibian.BS([self.underlying_close, float(option_symbol.strike_price), 0, dte],
+#                                 callPrice=self.close).impliedVolatility
+#
+#         else:
+#             _tmp_iv = mibian.BS([self.underlying_close, float(option_symbol.strike_price), 0, dte],
+#                                 putPrice=self.close).impliedVolatility
+#         self.implied_volatility = _tmp_iv
+#         greeks = mibian.BS([self.underlying_close, float(option_symbol.strike_price), 0, dte],
+#                            volatility=_tmp_iv)
+#         if position_type == PositionType.LONG:
+#             self.theta = greeks.callTheta
+#             self.delta = greeks.callDelta
+#             self.gamma = greeks.gamma
+#             self.rho = greeks.callRho
+#         else:
+#             self.theta = greeks.putTheta
+#             self.delta = greeks.putDelta
+#             self.gamma = greeks.gamma
+#             self.rho = greeks.putRho
 def load_ticker_history_db(ticker,module_config, connection=None):
     # ticker_history = []
 

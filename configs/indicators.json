@@ -79,7 +79,7 @@
   "STOCHASTIC_RSI": {
     "inverse": false,
     "require_alert_type": true,
-    "alert_type": "STOCHASTIC_RSI_OVERSOLD",
+    "alert_type": "STOCHASTIC_RSI_OVERBOUGHT",
     "rsi_overbought_threshold": 90,
     "rsi_oversold_threshold": 5,
     "include_in_dashboard": false

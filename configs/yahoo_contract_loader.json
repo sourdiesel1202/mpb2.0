@@ -3,6 +3,7 @@
 
   "timespan": "day",
   "timespan_multiplier": 1,
-
+  "test_mode": false,
+  "logging": false,
   "tickers": ["SPY"]
 }

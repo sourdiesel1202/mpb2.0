@@ -70,6 +70,7 @@ def update_ticker_profitable_lines(connection,profitable_line,ticker, ticker_his
     connection.commit()
 def write_ticker_profitable_lines(connection, ticker, ticker_history, profitable_lines, module_config):
     #ok so the idea where is that we write the line first and then
+    print(f"writing profitable lines for {ticker}")
     for profit_percentage, indexes in profitable_lines.items():
         if len(indexes) >= module_config['line_profit_minimum_matches']:
             new_line_str = f"Profitable Line {str(time.time()).split('.')[0]}{os.getpid()}"
@@ -104,6 +105,7 @@ def compare_profitable_ticker_lines_to_market(connection,ticker, ticker_history,
     profitable_line_matrix = load_profitable_line_matrix(connection, module_config, ignore_cache=True)
     pass
     loaded_histories ={}
+    print(f"Found {len(ticker_profitable_lines)} Ticker Profitable lines")
     #ok so the idea here is now to iterate over the genereated profitable lines of the ticker to the profitable lines of the market
     for profit, indexes in ticker_profitable_lines.items():
         positive_profit = profit >=0
@@ -152,6 +154,7 @@ def compare_profitable_ticker_lines_to_market(connection,ticker, ticker_history,
             return
             pass
         else: #otherwise we need to write the profitable lines for the ticker itself
+            print(f"Did not find any matches")
             if not read_only:
                 write_ticker_profitable_lines(connection, ticker, ticker_history, {profit:indexes}, module_config)
             pass
@@ -224,7 +227,7 @@ def scrub_potential_profitable_lines(ticker, ticker_history,potential_profitable
                 try:
                     similarity = determine_line_similarity(ticker_history_a, ticker_history_b, module_config)
                     index_dict[indexes[ii]] = round(similarity, 2)
-                    print(f"Profit Index {[x for x in potential_profitable_lines.keys()].index(profit_value)}/{len([x for x in potential_profitable_lines.keys()])}: {profit_value}%: Testing {i}/{len(indexes)}:{ii}/{len(indexes)} ${ticker}:{ticker_history_a[-1].dt}:Control Date : {ticker_history[indexes[i]].dt} => {ii}/{len(indexes)}  ${ticker}:{ticker_history_b[-1].dt}:Control Date: {ticker_history[indexes[ii]].dt}: Similarity: {similarity}")
+                    # print(f"Profit Index {[x for x in potential_profitable_lines.keys()].index(profit_value)}/{len([x for x in potential_profitable_lines.keys()])}: {profit_value}%: Testing {i}/{len(indexes)}:{ii}/{len(indexes)} ${ticker}:{ticker_history_a[-1].dt}:Control Date : {ticker_history[indexes[i]].dt} => {ii}/{len(indexes)}  ${ticker}:{ticker_history_b[-1].dt}:Control Date: {ticker_history[indexes[ii]].dt}: Similarity: {similarity}")
                 except:
                     traceback.print_exc()
                     index_dict[indexes[ii]] = round(0.00, 2)

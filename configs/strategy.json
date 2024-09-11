@@ -3,13 +3,16 @@
       "width": 5,
       "strategy_generation_type": "PERCENTAGE",
       "strategy_generation_value":4,
-      "position_length" : 10
+      "position_length" : 5
 
     },
     "LONG_PUT":{
-      "position_length": 20
+      "position_length": 5
     },
     "LONG_CALL":{
-      "position_length": 20
+      "position_length": 5
+    },
+  "IRON_BUTTERFLY":{
+      "position_length": 5
     }
 }

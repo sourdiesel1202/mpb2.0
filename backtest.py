@@ -72,7 +72,8 @@ def backtest_strategy_with_indicators(ticker, ticker_history, module_config, con
                 strategy = LongPut(ticker_history[i],ticker_history[i].dt, module_config['strategy_configs'][module_config['strategy']]['position_length'])
                 # strategy = LongCall(ticker_history[i-module_config['strategy_configs'][module_config['strategy']]['position_length']])
             results['positions'].append(strategy)
-            if strategy.is_profitable(ticker_history[i+module_config['strategy_configs'][module_config['strategy']]['position_length']], module_config):
+            # ticker_history[i:i + module_config['strategy_configs'][module_config['strategy']]['position_length']]
+            if strategy.is_profitable(ticker_history[i:i + module_config['strategy_configs'][module_config['strategy']]['position_length']], module_config):
                 results['winners'] += 1
             else:
                 results['losers'] += 1
